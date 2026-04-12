@@ -1,60 +1,205 @@
-import React, { useCallback, useMemo } from 'react'
-import ReactFlow, { 
-  Controls, 
-  Background, 
+import React, { useCallback, useMemo, useRef } from 'react'
+import ReactFlow, {
+  Controls,
+  Background,
   BackgroundVariant,
-  Panel
+  MiniMap,
+  useReactFlow,
+  ReactFlowProvider,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
+import { motion, AnimatePresence } from 'framer-motion'
+import { LayoutGrid, Minus, Plus, Compass } from 'lucide-react'
 
 import useWorkspaceStore from '../../store/useWorkspaceStore'
-import TerminalNode from './nodes/TerminalNode'
-import ChartNode from './nodes/ChartNode'
-import WebNode from './nodes/WebNode'
 
-const nodeTypes = {
-  terminal: TerminalNode,
-  chart: ChartNode,
-  web: WebNode,
+import ClockNode    from '../nodes/ClockNode'
+import TodoNode     from '../nodes/TodoNode'
+import NotesNode    from '../nodes/NotesNode'
+import CalendarNode from '../nodes/CalendarNode'
+import WebsiteNode  from '../nodes/WebsiteNode'
+import GroupNode    from '../nodes/GroupNode'
+
+// Define outside component to avoid recreation on each render
+const NODE_TYPES = {
+  clock:    ClockNode,
+  todo:     TodoNode,
+  notes:    NotesNode,
+  calendar: CalendarNode,
+  website:  WebsiteNode,
+  group:    GroupNode,
 }
 
-const CanvasContainer = () => {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect } = useWorkspaceStore()
+const CanvasInner = () => {
+  const {
+    nodes,
+    onNodesChange,
+    selectNode,
+    clearSelection,
+    viewMode,
+  } = useWorkspaceStore()
 
-  const defaultEdgeOptions = useMemo(() => ({
-    animated: true,
-    style: { stroke: '#88c0d0' },
-  }), [])
+  const { fitView, zoomIn, zoomOut } = useReactFlow()
+  const wrapperRef = useRef(null)
+
+  // Map our store nodes to React Flow format
+  const rfNodes = useMemo(() => nodes.map(node => ({
+    id:       node.id,
+    type:     node.type,
+    position: node.position,
+    selected: node.selected,
+    data:     node.data,
+    style:    node.style,
+    draggable: !node.style?.locked,
+    // Pass width/height to React Flow so fitView calculates correctly
+    width:  node.style?.width  || 280,
+    height: node.style?.height || 220,
+    // For group nodes (parent containers)
+    ...(node.parentId ? { parentNode: node.parentId, extent: 'parent' } : {}),
+  })), [nodes])
+
+  const handleNodeClick = useCallback((e, node) => {
+    e.stopPropagation()
+    selectNode(node.id)
+  }, [selectNode])
+
+  const handlePaneClick = useCallback(() => {
+    clearSelection()
+  }, [clearSelection])
+
+  const handleFitView = useCallback(() => {
+    fitView({ padding: 0.15, duration: 500 })
+  }, [fitView])
+
+  const handleInit = useCallback(() => {
+    // Delay fitView so nodes are fully rendered
+    setTimeout(() => fitView({ padding: 0.12, duration: 600 }), 100)
+  }, [fitView])
 
   return (
-    <div className="canvas-container">
+    <div
+      ref={wrapperRef}
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        background: 'var(--bg-canvas)',
+      }}
+    >
       <ReactFlow
-        nodes={nodes}
-        edges={edges}
+        nodes={rfNodes}
+        edges={[]}
         onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        defaultEdgeOptions={defaultEdgeOptions}
-        fitView
-        snapToGrid
-        snapGrid={[20, 20]}
+        nodeTypes={NODE_TYPES}
+        onNodeClick={handleNodeClick}
+        onPaneClick={handlePaneClick}
+        fitView={false}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        onInit={handleInit}
+        minZoom={0.1}
+        maxZoom={2.5}
+        panOnDrag={[1, 2]} // middle mouse or right click pan
+        selectionOnDrag={false}
+        multiSelectionKeyCode={null}
+        deleteKeyCode={null}   // We handle delete ourselves
+        proOptions={{ hideAttribution: true }}
+        nodesDraggable
+        nodesConnectable={false}
+        elementsSelectable
       >
-        <Background 
-          color="#4c566a" 
-          gap={20} 
-          variant={BackgroundVariant.Dots} 
+        {/* Background Grid */}
+        <Background
+          color="var(--bg-border)"
+          gap={24}
+          size={1}
+          variant={BackgroundVariant.Dots}
+          style={{ opacity: 0.4 }}
         />
-        <Controls />
-        <Panel position="bottom-right" className="bg-nord-1 p-3 rounded-xl border border-nord-2 shadow-2xl">
-          <div className="flex flex-col gap-1">
-            <p className="text-[10px] text-nord-3 uppercase font-bold tracking-tighter">Stats</p>
-            <p className="text-xs text-nord-5 font-mono">{nodes.length} Nodes • {edges.length} Connections</p>
-          </div>
-        </Panel>
+
+        {/* Controls (custom positioned) */}
+        <Controls
+          showInteractive={false}
+          position="bottom-right"
+          style={{ bottom: 24, right: 24 }}
+        />
+
+        {/* Minimap */}
+        <MiniMap
+          position="bottom-left"
+          style={{ bottom: 24, left: 176 }}
+          nodeColor="var(--bg-elevated)"
+          maskColor="rgba(0,0,0,0.4)"
+          nodeStrokeColor="var(--bg-border)"
+          pannable
+          zoomable
+        />
       </ReactFlow>
+
+      {/* Grid mode overlay badge */}
+      <AnimatePresence>
+        {viewMode === 'grid' && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            style={{
+              position: 'absolute',
+              top: 16,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'var(--accent)',
+              color: '#1e222a',
+              padding: '4px 14px',
+              borderRadius: 99,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              zIndex: 100,
+            }}
+          >
+            <LayoutGrid size={12} />
+            Grid Mode — Resize any panel to reflow
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Fit view button */}
+      <button
+        onClick={handleFitView}
+        style={{
+          position: 'absolute',
+          bottom: 24,
+          right: 100,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--bg-border)',
+          borderRadius: 8,
+          padding: '6px 10px',
+          fontSize: 11,
+          color: 'var(--text-secondary)',
+          cursor: 'pointer',
+          zIndex: 10,
+        }}
+        title="Fit view (Ctrl+0)"
+      >
+        <Compass size={12} />
+        Fit
+      </button>
     </div>
   )
 }
+
+// Wrap with provider required by useReactFlow hook
+const CanvasContainer = () => (
+  <ReactFlowProvider>
+    <CanvasInner />
+  </ReactFlowProvider>
+)
 
 export default CanvasContainer

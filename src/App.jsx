@@ -1,56 +1,114 @@
-import React, { useEffect } from 'react'
-import Navbar from './components/layout/Navbar'
+import React, { useEffect, useCallback } from 'react'
+import { AnimatePresence } from 'framer-motion'
+
+import Navbar          from './components/layout/Navbar'
+import Sidebar         from './components/layout/Sidebar'
+import PropertiesPanel from './components/layout/PropertiesPanel'
 import CanvasContainer from './features/canvas/CanvasContainer'
+import ThemeModal      from './components/ui/ThemeModal'
+import ShortcutModal   from './components/ui/ShortcutModal'
+import SettingsModal   from './components/ui/SettingsModal'
+import EmptyState      from './components/ui/EmptyState'
+
 import useWorkspaceStore from './store/useWorkspaceStore'
+import useThemeStore     from './store/useThemeStore'
 
 function App() {
-  const { setNodes } = useWorkspaceStore()
+  const {
+    nodes,
+    selectedNodeId,
+    activeModal,
+    closeModal,
+    openModal,
+    addNode,
+    removeNode,
+    duplicateNode,
+    setViewMode,
+    viewMode,
+  } = useWorkspaceStore()
+
+  const { init } = useThemeStore()
+
+  // Init theme CSS variables on mount
+  useEffect(() => {
+    init()
+  }, [init])
+
+  // ── Global Keyboard Shortcuts ──────────────────────────────────────────────
+  const handleKeyDown = useCallback((e) => {
+    const tag = e.target.tagName.toLowerCase()
+    const isEditing = tag === 'input' || tag === 'textarea' || e.target.isContentEditable
+    if (isEditing) return
+
+    const ctrl = e.ctrlKey || e.metaKey
+
+    if (ctrl && e.key === 'n') {
+      e.preventDefault()
+      addNode('notes')
+    } else if (ctrl && e.key === 'd') {
+      e.preventDefault()
+      if (selectedNodeId) duplicateNode(selectedNodeId)
+    } else if (ctrl && e.key === 'g') {
+      e.preventDefault()
+      setViewMode(viewMode === 'flex' ? 'grid' : 'flex')
+    } else if (ctrl && e.key === '0') {
+      e.preventDefault()
+      // Fit view is handled inside CanvasContainer
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (selectedNodeId) removeNode(selectedNodeId)
+    } else if (e.key === 'Escape') {
+      if (activeModal) closeModal()
+    }
+  }, [selectedNodeId, activeModal, viewMode, addNode, duplicateNode, removeNode, setViewMode, closeModal])
 
   useEffect(() => {
-    // Initial nodes for demonstration
-    setNodes([
-      {
-        id: 'terminal-1',
-        type: 'terminal',
-        position: { x: 250, y: 150 },
-        data: { 
-          label: 'npm run dev', 
-          output: 'Vite v5.2.0 ready in 150ms',
-          status: 'success'
-        },
-      },
-      {
-        id: 'chart-1',
-        type: 'chart',
-        position: { x: 600, y: 200 },
-        data: { label: 'Performance Metrics' },
-      },
-      {
-        id: 'web-1',
-        type: 'web',
-        position: { x: 250, y: 450 },
-        data: { 
-          title: 'Nordic Palette Ref', 
-          url: 'https://www.nordtheme.com',
-          preview: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=400'
-        },
-      },
-    ])
-  }, [setNodes])
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleKeyDown])
+
+  const isEmpty = nodes.length === 0
 
   return (
-    <div className="w-full h-screen">
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+      height: '100%',
+      background: 'var(--bg-canvas)',
+      overflow: 'hidden',
+      position: 'relative',
+    }}>
+      {/* ── Top Navbar ── */}
       <Navbar />
-      <main className="w-full h-full pt-16">
-        <CanvasContainer />
-      </main>
-      
-      {/* Toast Overlay Example */}
-      <div className="fixed bottom-6 left-6 z-50 animate-slide-up">
-        <div className="bg-nord-14/10 border border-nord-14/30 px-4 py-2 rounded-lg backdrop-blur-md">
-          <p className="text-[10px] font-bold text-nord-14 uppercase tracking-widest">Workspace Online</p>
+
+      {/* ── Main Layout Row ── */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        overflow: 'hidden',
+        position: 'relative',
+      }}>
+        {/* Left Sidebar */}
+        <Sidebar />
+
+        {/* Canvas + Empty state */}
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <CanvasContainer />
+          {isEmpty && <EmptyState />}
         </div>
+
+        {/* Right Properties Panel (conditionally shown) */}
+        <AnimatePresence>
+          {selectedNodeId && <PropertiesPanel key="props" />}
+        </AnimatePresence>
       </div>
+
+      {/* ── Modal Layer ── */}
+      <AnimatePresence>
+        {activeModal === 'theme'     && <ThemeModal    key="theme"     />}
+        {activeModal === 'shortcuts' && <ShortcutModal key="shortcuts" />}
+        {activeModal === 'settings'  && <SettingsModal key="settings"  />}
+      </AnimatePresence>
     </div>
   )
 }
