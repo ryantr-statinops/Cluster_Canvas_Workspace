@@ -9,25 +9,24 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutGrid, Minus, Plus, Compass } from 'lucide-react'
+import { LayoutGrid, Compass, Maximize, Minimize } from 'lucide-react'
 
 import useWorkspaceStore from '../../store/useWorkspaceStore'
+import GridOverlay from '../../components/ui/GridOverlay'
 
-import ClockNode    from '../nodes/ClockNode'
 import TodoNode     from '../nodes/TodoNode'
 import NotesNode    from '../nodes/NotesNode'
-import CalendarNode from '../nodes/CalendarNode'
 import WebsiteNode  from '../nodes/WebsiteNode'
 import GroupNode    from '../nodes/GroupNode'
+import DrawNode     from '../nodes/DrawNode'
 
 // Define outside component to avoid recreation on each render
 const NODE_TYPES = {
-  clock:    ClockNode,
   todo:     TodoNode,
   notes:    NotesNode,
-  calendar: CalendarNode,
   website:  WebsiteNode,
   group:    GroupNode,
+  draw:     DrawNode,
 }
 
 const CanvasInner = () => {
@@ -37,6 +36,8 @@ const CanvasInner = () => {
     selectNode,
     clearSelection,
     viewMode,
+    isFullScreen,
+    toggleFullScreen
   } = useWorkspaceStore()
 
   const { fitView, zoomIn, zoomOut } = useReactFlow()
@@ -99,8 +100,8 @@ const CanvasInner = () => {
         minZoom={0.1}
         maxZoom={2.5}
         panOnDrag={[1, 2]} // middle mouse or right click pan
-        selectionOnDrag={false}
-        multiSelectionKeyCode={null}
+        selectionOnDrag={true}
+        multiSelectionKeyCode="Shift"
         deleteKeyCode={null}   // We handle delete ourselves
         proOptions={{ hideAttribution: true }}
         nodesDraggable
@@ -167,30 +168,42 @@ const CanvasInner = () => {
         )}
       </AnimatePresence>
 
-      {/* Fit view button */}
-      <button
-        onClick={handleFitView}
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          right: 100,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 5,
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--bg-border)',
-          borderRadius: 8,
-          padding: '6px 10px',
-          fontSize: 11,
-          color: 'var(--text-secondary)',
-          cursor: 'pointer',
-          zIndex: 10,
-        }}
-        title="Fit view (Ctrl+0)"
-      >
-        <Compass size={12} />
-        Fit
-      </button>
+      {/* Controls Container */}
+      <div style={{
+        position: 'absolute', bottom: 24, right: 100,
+        display: 'flex', gap: 8, zIndex: 10
+      }}>
+        {/* Fullscreen Toggle */}
+        <button
+          onClick={toggleFullScreen}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8,
+            padding: '6px 10px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer',
+          }}
+          title="Toggle Fullscreen"
+        >
+          {isFullScreen ? <Minimize size={12} /> : <Maximize size={12} />}
+          {isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
+        </button>
+
+        {/* Fit view button */}
+        <button
+          onClick={handleFitView}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8,
+            padding: '6px 10px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer',
+          }}
+          title="Fit view (Ctrl+0)"
+        >
+          <Compass size={12} />
+          Fit
+        </button>
+      </div>
+
+      {/* Grid Overlay inside Provider */}
+      <GridOverlay />
     </div>
   )
 }

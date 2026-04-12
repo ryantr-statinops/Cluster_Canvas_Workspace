@@ -121,7 +121,7 @@ const PropertiesPanel = () => {
           <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
             Properties
           </h2>
-          <button className="icon-btn" style={{ width: 24, height: 24, borderRadius: 6 }} onClick={clearSelection}>
+          <button className="icon-btn" style={{ width: 24, height: 24, borderRadius: 6 }} onClick={useWorkspaceStore.getState().closeNodeProperties}>
             <X size={13} />
           </button>
         </div>

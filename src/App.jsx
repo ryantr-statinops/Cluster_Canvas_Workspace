@@ -25,6 +25,10 @@ function App() {
     duplicateNode,
     setViewMode,
     viewMode,
+    groupSelected,
+    ungroupSelected,
+    propertiesPanelOpen,
+    isFullScreen,
   } = useWorkspaceStore()
 
   const { init } = useThemeStore()
@@ -41,16 +45,25 @@ function App() {
     if (isEditing) return
 
     const ctrl = e.ctrlKey || e.metaKey
+    const shift = e.shiftKey
 
-    if (ctrl && e.key === 'n') {
+    if (ctrl && e.key.toLowerCase() === 'n') {
       e.preventDefault()
       addNode('notes')
-    } else if (ctrl && e.key === 'd') {
+    } else if (ctrl && e.key.toLowerCase() === 'd') {
       e.preventDefault()
       if (selectedNodeId) duplicateNode(selectedNodeId)
-    } else if (ctrl && e.key === 'g') {
+    } else if (ctrl && shift && e.key.toLowerCase() === 'g') {
       e.preventDefault()
-      setViewMode(viewMode === 'flex' ? 'grid' : 'flex')
+      const hasGroupSelected = nodes.some(n => n.selected && n.type === 'group')
+      if (hasGroupSelected) ungroupSelected()
+      else groupSelected()
+    } else if (ctrl && !shift && e.key.toLowerCase() === 'f') {
+      e.preventDefault()
+      setViewMode('flex')
+    } else if (ctrl && !shift && e.key.toLowerCase() === 'g') {
+      e.preventDefault()
+      setViewMode('grid')
     } else if (ctrl && e.key === '0') {
       e.preventDefault()
       // Fit view is handled inside CanvasContainer
@@ -59,7 +72,7 @@ function App() {
     } else if (e.key === 'Escape') {
       if (activeModal) closeModal()
     }
-  }, [selectedNodeId, activeModal, viewMode, addNode, duplicateNode, removeNode, setViewMode, closeModal])
+  }, [selectedNodeId, activeModal, viewMode, addNode, duplicateNode, removeNode, setViewMode, closeModal, groupSelected, ungroupSelected, nodes])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
@@ -79,7 +92,7 @@ function App() {
       position: 'relative',
     }}>
       {/* ── Top Navbar ── */}
-      <Navbar />
+      {!isFullScreen && <Navbar />}
 
       {/* ── Main Layout Row ── */}
       <div style={{
@@ -89,7 +102,7 @@ function App() {
         position: 'relative',
       }}>
         {/* Left Sidebar */}
-        <Sidebar />
+        {!isFullScreen && <Sidebar />}
 
         {/* Canvas + Empty state */}
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
@@ -99,7 +112,7 @@ function App() {
 
         {/* Right Properties Panel (conditionally shown) */}
         <AnimatePresence>
-          {selectedNodeId && <PropertiesPanel key="props" />}
+          {propertiesPanelOpen && <PropertiesPanel key="props" />}
         </AnimatePresence>
       </div>
 

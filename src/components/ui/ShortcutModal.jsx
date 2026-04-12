@@ -7,11 +7,10 @@ const DEFAULT_SHORTCUTS = [
   { id: 'addNode',      label: 'Add Node',       keys: ['Ctrl', 'N'] },
   { id: 'deleteNode',   label: 'Delete Node',    keys: ['Delete'] },
   { id: 'duplicate',    label: 'Duplicate Node', keys: ['Ctrl', 'D'] },
-  { id: 'toggleGrid',   label: 'Toggle Flex/Grid', keys: ['Ctrl', 'G'] },
+  { id: 'flexMode',     label: 'Flex Mode',      keys: ['Ctrl', 'F'] },
+  { id: 'gridMode',     label: 'Grid Mode',      keys: ['Ctrl', 'G'] },
+  { id: 'groupNodes',   label: 'Group/Ungroup',  keys: ['Ctrl', 'Shift', 'G'] },
   { id: 'zoomReset',    label: 'Zoom Reset',     keys: ['Ctrl', '0'] },
-  { id: 'bringForward', label: 'Bring Forward',  keys: ['Ctrl', ']'] },
-  { id: 'sendBackward', label: 'Send Backward',  keys: ['Ctrl', '['] },
-  { id: 'lockNode',     label: 'Lock/Unlock',    keys: ['Ctrl', 'L'] },
 ]
 
 const KeyBadge = ({ label }) => (

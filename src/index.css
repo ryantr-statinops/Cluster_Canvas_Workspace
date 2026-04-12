@@ -6,16 +6,16 @@
 
 /* ── CSS Custom Property Defaults (Nordic Dark) ───────────────────────────── */
 :root {
-  --bg-canvas:        #1e222a;
-  --bg-surface:       #2e3440;
-  --bg-elevated:      #3b4252;
-  --bg-border:        #434c5e;
-  --text-primary:     #eceff4;
-  --text-secondary:   #d8dee9;
-  --text-muted:       #4c566a;
-  --accent:           #88c0d0;
-  --accent-glow:      rgba(136,192,208,0.25);
-  --accent-secondary: #81a1c1;
+  --bg-canvas:        #0b0d0f;
+  --bg-surface:       #13161a;
+  --bg-elevated:      #1e2229;
+  --bg-border:        #2d333b;
+  --text-primary:     #f8fafc;
+  --text-secondary:   #94a3b8;
+  --text-muted:       #475569;
+  --accent:           #60a5fa;
+  --accent-glow:      rgba(96,165,250,0.15);
+  --accent-secondary: #3b82f6;
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
@@ -110,6 +110,11 @@
     padding: 12px;
   }
 
+  .node-content.no-padding {
+    padding: 0;
+    overflow: hidden;
+  }
+
   /* Sidebar item */
   .sidebar-item {
     display: flex;
@@ -127,6 +132,7 @@
   .sidebar-item:hover {
     background: var(--bg-elevated);
     color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
   }
 
   .sidebar-item.active {

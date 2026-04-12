@@ -11,17 +11,18 @@ import useWorkspaceStore from '../../store/useWorkspaceStore'
 const NODE_QUICK_ADD = [
   { type: 'notes',     label: 'Note',     icon: StickyNote },
   { type: 'todo',      label: 'To-do',    icon: CheckSquare },
-  { type: 'clock',     label: 'Clock',    icon: Clock },
-  { type: 'calendar',  label: 'Calendar', icon: Calendar },
   { type: 'website',   label: 'Website',  icon: Globe },
-  { type: 'picture',   label: 'Picture',  icon: Image },
-  { type: 'group',     label: 'Group',    icon: Square },
+  { type: 'draw',      label: 'Draw',     icon: Pencil },
 ]
 
 const Navbar = () => {
-  const { viewMode, setViewMode, openModal, addNode, nodes } = useWorkspaceStore()
+  const { 
+    viewMode, setViewMode, openModal, addNode, nodes, 
+    workspaces, activeWorkspaceId, createWorkspace, switchWorkspace 
+  } = useWorkspaceStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [addMenuOpen, setAddMenuOpen] = useState(false)
+  const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
 
   const handleAddNode = useCallback((type) => {
     addNode(type)
@@ -46,27 +47,100 @@ const Navbar = () => {
       zIndex: 50,
       position: 'relative',
     }}>
-      {/* ── Left: Logo ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-        <div style={{
-          width: 32,
-          height: 32,
-          background: 'var(--accent)',
-          borderRadius: 8,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 0 16px var(--accent-glow)',
-        }}>
-          <LayoutDashboard size={16} color="#1e222a" />
-        </div>
-        <div>
-          <h1 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+      {/* ── Left: Logo & Workspace Switcher ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 32,
+            height: 32,
+            background: 'var(--accent)',
+            borderRadius: 8,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 0 16px var(--accent-glow)',
+          }}>
+            <LayoutDashboard size={16} color="#1e222a" />
+          </div>
+          <h1 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>
             Cluster Canvas
           </h1>
-          <p style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Workspace
-          </p>
+        </div>
+
+        <div style={{ width: 1, height: 24, background: 'var(--bg-border)' }} />
+
+        {/* Workspace Switcher */}
+        <div style={{ position: 'relative' }}>
+          <button 
+            onClick={() => setWorkspaceMenuOpen(s => !s)}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: 6, 
+              background: 'var(--bg-elevated)', border: '1px solid var(--bg-border)', cursor: 'pointer',
+              padding: '6px 12px', borderRadius: 8, transition: 'border-color 0.15s'
+            }}
+            onMouseOver={e => e.currentTarget.style.borderColor = 'var(--text-muted)'}
+            onMouseOut={e => e.currentTarget.style.borderColor = 'var(--bg-border)'}
+          >
+            <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 600 }}>
+              {workspaces.find(ws => ws.id === activeWorkspaceId)?.name || 'Main Workspace'}
+            </span>
+            <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+          </button>
+          
+          {workspaceMenuOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 98 }}
+                onClick={() => setWorkspaceMenuOpen(false)}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  position: 'absolute', top: 'calc(100% + 8px)', left: 0,
+                  background: 'var(--bg-surface)', border: '1px solid var(--bg-border)',
+                  borderRadius: 12, padding: 8, zIndex: 99, minWidth: 200,
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.4)',
+                  display: 'flex', flexDirection: 'column', gap: 4,
+                }}
+              >
+                <div style={{ padding: '4px 8px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Your Workspaces
+                </div>
+                {workspaces.map((ws) => (
+                  <button
+                    key={ws.id}
+                    onClick={() => { switchWorkspace(ws.id); setWorkspaceMenuOpen(false); }}
+                    style={{
+                      textAlign: 'left', padding: '8px 10px', borderRadius: 6,
+                      background: ws.id === activeWorkspaceId ? 'var(--bg-elevated)' : 'transparent',
+                      border: 'none', color: ws.id === activeWorkspaceId ? 'var(--text-primary)' : 'var(--text-secondary)',
+                      fontSize: 13, cursor: 'pointer', transition: 'background 0.1s', fontWeight: 500
+                    }}
+                    onMouseOver={e => { if (ws.id !== activeWorkspaceId) e.currentTarget.style.background = 'var(--bg-elevated)' }}
+                    onMouseOut={e => { if (ws.id !== activeWorkspaceId) e.currentTarget.style.background = 'transparent' }}
+                  >
+                    {ws.name}
+                  </button>
+                ))}
+                <div style={{ height: 1, background: 'var(--bg-border)', margin: '4px 0' }} />
+                <button
+                  onClick={() => { createWorkspace(); setWorkspaceMenuOpen(false); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '8px 10px', borderRadius: 6,
+                    background: 'transparent', border: 'none', color: 'var(--accent)',
+                    fontSize: 13, cursor: 'pointer', fontWeight: 600
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = 'color-mix(in srgb, var(--accent) 15%, transparent)'}
+                  onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <Plus size={14} /> Create Workspace
+                </button>
+              </motion.div>
+            </>
+          )}
         </div>
       </div>
 

@@ -1,9 +1,10 @@
 import React, { useCallback, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
+import { NodeResizer } from 'reactflow'
 import {
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Layers,
-  Lock, Unlock, X, Maximize2, Grip
+  Lock, Unlock, X, Maximize2, Grip, Settings2
 } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 
@@ -35,8 +36,8 @@ const TYPE_LABELS = {
   group:     'GROUP',
 }
 
-const BaseNode = ({ id, type, data, style, selected, children }) => {
-  const { selectNode, removeNode, toggleLock, bringToFront, updateNodeData } = useWorkspaceStore()
+const BaseNode = ({ id, type, data, style, selected, children, headerControls, noPadding }) => {
+  const { selectNode, removeNode, toggleLock, bringToFront, updateNodeData, updateNodeStyle, openNodeProperties } = useWorkspaceStore()
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleValue, setTitleValue] = useState(data?.title || 'Node')
   const titleRef = useRef(null)
@@ -99,8 +100,20 @@ const BaseNode = ({ id, type, data, style, selected, children }) => {
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       whileDrag={{ scale: 1.015, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}
     >
+      <NodeResizer 
+        color="var(--accent)" 
+        isVisible={selected && !isLocked} 
+        minWidth={200} 
+        minHeight={150} 
+        lineStyle={{ borderWidth: 2 }}
+        handleStyle={{ width: 8, height: 8, background: 'var(--accent)', border: 'none' }}
+        onResize={(e, params) => {
+           updateNodeStyle(id, { width: params.width, height: params.height })
+        }}
+      />
+      
       {/* ── Header ─── */}
-      <div className="node-header nodrag" onDoubleClick={(e) => e.stopPropagation()}>
+      <div className="node-header" onDoubleClick={(e) => e.stopPropagation()}>
         {/* Drag handle indicator */}
         <Grip size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
 
@@ -159,14 +172,16 @@ const BaseNode = ({ id, type, data, style, selected, children }) => {
             }
           </button>
 
-          {/* Expand (placeholder) */}
+          {headerControls}
+
+          {/* Properties Panel Toggle */}
           <button
             className="icon-btn"
-            style={{ width: 22, height: 22, borderRadius: 5 }}
-            title="Expand"
-            onClick={(e) => e.stopPropagation()}
+            style={{ width: 22, height: 22, borderRadius: 5, color: 'var(--text-secondary)' }}
+            title="Properties"
+            onClick={(e) => { e.stopPropagation(); openNodeProperties(id); }}
           >
-            <Maximize2 size={10} />
+            <Settings2 size={11} />
           </button>
 
           {/* Close */}
@@ -182,7 +197,7 @@ const BaseNode = ({ id, type, data, style, selected, children }) => {
       </div>
 
       {/* ── Content ── */}
-      <div className="node-content" style={{ overflow: 'hidden' }}>
+      <div className={`node-content${noPadding ? ' no-padding' : ''}`}>
         {children}
       </div>
 

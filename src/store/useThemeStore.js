@@ -3,20 +3,20 @@ import { create } from 'zustand'
 const themes = {
   'nordic-dark': {
     id: 'nordic-dark',
-    name: 'Nordic Dark',
-    swatches: ['#3b4252', '#4c566a', '#5e81ac', '#88c0d0'],
-    accent: '#88c0d0',
+    name: 'Premium Dark',
+    swatches: ['#0f1115', '#1a1d24', '#2b303b', '#60a5fa'],
+    accent: '#60a5fa', // sleek blue glow
     css: {
-      '--bg-canvas':    '#1e222a',
-      '--bg-surface':   '#2e3440',
-      '--bg-elevated':  '#3b4252',
-      '--bg-border':    '#434c5e',
-      '--text-primary': '#eceff4',
-      '--text-secondary':'#d8dee9',
-      '--text-muted':   '#4c566a',
-      '--accent':       '#88c0d0',
-      '--accent-glow':  'rgba(136,192,208,0.25)',
-      '--accent-secondary': '#81a1c1',
+      '--bg-canvas':    '#0b0d0f',
+      '--bg-surface':   '#13161a',
+      '--bg-elevated':  '#1e2229',
+      '--bg-border':    '#2d333b',
+      '--text-primary': '#f8fafc',
+      '--text-secondary':'#94a3b8',
+      '--text-muted':   '#475569',
+      '--accent':       '#60a5fa',
+      '--accent-glow':  'rgba(96,165,250,0.15)',
+      '--accent-secondary': '#3b82f6',
     },
   },
   'light-minimal': {
