@@ -11,7 +11,7 @@ import 'reactflow/dist/style.css'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LayoutGrid, Compass, Maximize, Minimize } from 'lucide-react'
 
-import useWorkspaceStore from '../../store/useWorkspaceStore'
+import useWorkspaceStore, { NODE_DEFAULTS } from '../../store/useWorkspaceStore'
 import GridOverlay from '../../components/ui/GridOverlay'
 
 import TodoNode     from '../nodes/TodoNode'
@@ -53,8 +53,8 @@ const CanvasInner = () => {
     style:    node.style,
     draggable: !node.style?.locked,
     // Pass width/height to React Flow so fitView calculates correctly
-    width:  node.style?.width  || 280,
-    height: node.style?.height || 220,
+    width:  node.style?.width  ?? (NODE_DEFAULTS[node.type]?.width  || 280),
+    height: node.style?.height ?? (NODE_DEFAULTS[node.type]?.height || 220),
     // For group nodes (parent containers)
     ...(node.parentId ? { parentNode: node.parentId, extent: 'parent' } : {}),
   })), [nodes])
@@ -187,6 +187,34 @@ const CanvasInner = () => {
           {isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
         </button>
 
+        {/* Zoom out button */}
+        <button
+          onClick={zoomOut}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8,
+            padding: '6px 10px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer',
+          }}
+          title="Zoom out"
+        >
+          −
+          <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1 }}>Zoom</span>
+        </button>
+
+        {/* Zoom in button */}
+        <button
+          onClick={zoomIn}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8,
+            padding: '6px 10px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer',
+          }}
+          title="Zoom in"
+        >
+          +
+          <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1 }}>Zoom</span>
+        </button>
+
         {/* Fit view button */}
         <button
           onClick={handleFitView}
@@ -201,6 +229,7 @@ const CanvasInner = () => {
           Fit
         </button>
       </div>
+
 
       {/* Grid Overlay inside Provider */}
       <GridOverlay />

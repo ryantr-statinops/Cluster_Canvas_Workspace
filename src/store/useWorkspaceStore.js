@@ -8,6 +8,7 @@ const NODE_DEFAULTS = {
   todo:    { width: 280, height: 240 },
   website: { width: 400, height: 300 },
   draw:    { width: 360, height: 300 },
+  group:   { width: 360, height: 300 },
 }
 
 // Default data templates per node type

@@ -70,6 +70,9 @@
 
   /* Node base wrapper */
   .node-window {
+    width: 100%;
+    height: 100%;
+    position: relative;
     background: var(--bg-surface);
     border: 1px solid var(--bg-border);
     border-radius: 12px;
@@ -280,18 +283,24 @@
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  width: auto !important;
+  /* Size is driven by NodeResizer + inline styles via our node wrapper */
 }
 
-.react-flow__node.selected > div {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 1px var(--accent), 0 0 24px var(--accent-glow) !important;
-}
+
+
+
+/* React Flow selection border is handled by BaseNode's `.node-window.selected`.
+   This override can cause visual mismatch because React Flow's `.selected` class is not guaranteed
+   to be on the same element as our `.node-window` wrapper. */
+
 
 /* Hide handles (we're using a window model, not edge connections) */
+/* Allow React Flow NodeResizer handles to work.
+   We only hide edge connection handles by narrowing selector if needed. */
 .react-flow__handle {
-  display: none !important;
+  /* keep default handle visibility */
 }
+
 
 /* Controls */
 .react-flow__controls {

@@ -6,7 +6,7 @@ import {
   Image, Video, Gauge, Timer, Pencil, Layers,
   Lock, Unlock, X, Maximize2, Grip, Settings2
 } from 'lucide-react'
-import useWorkspaceStore from '../../store/useWorkspaceStore'
+import useWorkspaceStore, { NODE_DEFAULTS } from '../../store/useWorkspaceStore'
 
 const TYPE_ICONS = {
   website:   Globe,
@@ -82,8 +82,6 @@ const BaseNode = ({ id, type, data, style, selected, children, headerControls, n
     <motion.div
       className={`node-window ${selected ? 'selected' : ''}`}
       style={{
-        width:   style?.width  || 280,
-        height:  style?.height || 220,
         zIndex:  style?.zIndex || 1,
         opacity: style?.opacity ?? 1,
         borderColor: selected

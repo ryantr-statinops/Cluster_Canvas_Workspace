@@ -6,7 +6,8 @@ import {
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Square,
 } from 'lucide-react'
-import useWorkspaceStore from '../../store/useWorkspaceStore'
+import useWorkspaceStore, { NODE_DEFAULTS } from '../../store/useWorkspaceStore'
+
 
 const TYPE_ICONS = {
   website:   Globe,
@@ -61,8 +62,6 @@ const PropertiesPanel = () => {
     toggleLock,
     bringToFront,
     sendToBack,
-    bringForward,
-    sendBackward,
     removeNode,
     duplicateNode,
   } = useWorkspaceStore()
@@ -167,10 +166,40 @@ const PropertiesPanel = () => {
           {/* Size */}
           <Row label="Size">
             <div style={{ display: 'flex', gap: 8 }}>
-              <NumBox value={selectedNode.style?.width} label="W" />
-              <NumBox value={selectedNode.style?.height} label="H" />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                  W
+                </label>
+                <input
+                  type="number"
+                  min={200}
+                  step={1}
+                  disabled={isLocked}
+                  value={Math.round(selectedNode.style?.width ?? NODE_DEFAULTS[selectedNode.type]?.width ?? 280)}
+                  onChange={(e) => updateNodeStyle(selectedNodeId, { width: parseInt(e.target.value || '0', 10) })}
+                  style={{ height: 30, opacity: isLocked ? 0.6 : 1 }}
+                  className="field-input"
+                />
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                  H
+                </label>
+                <input
+                  type="number"
+                  min={150}
+                  step={1}
+                  disabled={isLocked}
+                  value={Math.round(selectedNode.style?.height ?? NODE_DEFAULTS[selectedNode.type]?.height ?? 220)}
+                  onChange={(e) => updateNodeStyle(selectedNodeId, { height: parseInt(e.target.value || '0', 10) })}
+                  style={{ height: 30, opacity: isLocked ? 0.6 : 1 }}
+                  className="field-input"
+                />
+              </div>
             </div>
           </Row>
+
 
           {/* Layer */}
           <Row label="Layer">
