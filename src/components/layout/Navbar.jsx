@@ -28,6 +28,7 @@ const NODE_QUICK_ADD = [
   { type: 'todo',      label: 'To-do',     icon: CheckSquare },
   { type: 'website',   label: 'Website',   icon: Globe },
   { type: 'draw',      label: 'Draw',      icon: Pencil },
+  { type: 'group',     label: 'Group',     icon: Layers },
 ]
 
 const NODE_TYPE_ICONS = {

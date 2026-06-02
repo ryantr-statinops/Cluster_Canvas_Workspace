@@ -21,6 +21,7 @@ const NODE_CATEGORIES = [
   { type: 'notes',     label: 'Notes',     icon: StickyNote },
   { type: 'todo',      label: 'To-do',     icon: CheckSquare },
   { type: 'draw',      label: 'Draw',      icon: Pencil },
+  { type: 'group',     label: 'Group',     icon: Layers },
 ]
 
 const SectionHeader = ({ label, open, onToggle, count }) => (
