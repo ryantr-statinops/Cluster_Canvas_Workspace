@@ -4,8 +4,18 @@ import { nanoid } from 'nanoid'
 
 import { createBaseNode } from '../features/nodes/registry/nodeSchema'
 import { getDefaultSize, getDefaultData } from '../features/nodes/registry/nodeRegistry'
+import {
+  captureSnapshot,
+  pushSnapshot,
+  performUndo,
+  performRedo,
+} from '../utils/history'
 
 const useWorkspaceStore = create((set, get) => ({
+  // ── Undo/Redo State ──────────────────────────────────────────────────────────
+  undoStack: [],
+  redoStack: [],
+
   // ── Core State ──────────────────────────────────────────────────────────────
   workspaces: [{ id: 'default', name: 'Main Workspace', nodes: [], edges: [], gridPositions: {} }],
   activeWorkspaceId: 'default',
@@ -17,6 +27,42 @@ const useWorkspaceStore = create((set, get) => ({
   sidebarOpen: true,
   propertiesPanelOpen: false,
   activeModal: null,
+
+  // ── Undo / Redo ──────────────────────────────────────────────────────────────
+  pushSnapshot: () => {
+    const state = get()
+    const snap = captureSnapshot(state)
+    set(s => pushSnapshot(s.undoStack, snap))
+  },
+  undo: () => {
+    const state = get()
+    const result = performUndo(state.undoStack, state.redoStack, state)
+    if (!result) return
+    set({
+      ...result.snapshot,
+      undoStack: result.undoStack,
+      redoStack: result.redoStack,
+      // Clear selections on undo
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      propertiesPanelOpen: false,
+    })
+  },
+  redo: () => {
+    const state = get()
+    const result = performRedo(state.undoStack, state.redoStack, state)
+    if (!result) return
+    set({
+      ...result.snapshot,
+      undoStack: result.undoStack,
+      redoStack: result.redoStack,
+      selectedNodeId: null,
+      selectedEdgeId: null,
+      propertiesPanelOpen: false,
+    })
+  },
+  canUndo: () => get().undoStack.length > 0,
+  canRedo: () => get().redoStack.length > 0,
 
   // ── Workspace Switching ──────────────────────────────────────────────────────
   createWorkspace: () => {
@@ -53,9 +99,15 @@ const useWorkspaceStore = create((set, get) => ({
 
   // ── React Flow Handlers ──────────────────────────────────────────────────────
   onNodesChange: (changes) => {
+    // Only snapshot for non-view-only changes (position updates, deletions, additions)
+    const hasStructuralChange = changes.some(c => c.type !== 'position' || (c.type === 'position' && c.dragging === false))
+    if (hasStructuralChange) get().pushSnapshot()
     set({ nodes: applyNodeChanges(changes, get().nodes) })
   },
   onEdgesChange: (changes) => {
+    // Only snapshot for structural changes (add/remove), not selection/hover
+    const hasStructuralChange = changes.some(c => c.type === 'add' || c.type === 'remove')
+    if (hasStructuralChange) get().pushSnapshot()
     set({ edges: applyEdgeChanges(changes, get().edges) })
   },
   onConnect: (connection) => {
@@ -81,14 +133,19 @@ const useWorkspaceStore = create((set, get) => ({
     set((state) => ({ edges: [...state.edges, newEdge] }))
   },
   updateEdgeData: (edgeId, data) => {
+    get().pushSnapshot()
     set((state) => ({
       edges: state.edges.map(e => e.id === edgeId ? { ...e, data: { ...e.data, ...data } } : e),
     }))
   },
-  setEdges: (edges) => set({ edges }),
+  setEdges: (edges) => {
+    get().pushSnapshot()
+    set({ edges })
+  },
 
   // ── Node CRUD (via Unified Schema) ──────────────────────────────────────────
   addNode: (type, extraData = {}) => {
+    get().pushSnapshot()
     const size = getDefaultSize(type)
     const defaultData = getDefaultData(type)
     const maxZ = get().nodes.reduce((max, n) => Math.max(max, n.style?.zIndex || 0), 0)
@@ -118,6 +175,7 @@ const useWorkspaceStore = create((set, get) => ({
   },
 
   removeNode: (nodeId) => {
+    get().pushSnapshot()
     set((state) => ({
       nodes: state.nodes.filter((n) => n.id !== nodeId && n.parentNode !== nodeId),
       edges: state.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
@@ -127,6 +185,7 @@ const useWorkspaceStore = create((set, get) => ({
   },
 
   duplicateNode: (nodeId) => {
+    get().pushSnapshot()
     const node = get().nodes.find((n) => n.id === nodeId)
     if (!node || node.type === 'group') return
     const maxZ = get().nodes.reduce((max, n) => Math.max(max, n.style?.zIndex || 0), 0)
@@ -147,18 +206,21 @@ const useWorkspaceStore = create((set, get) => ({
 
   // ── Node Data Updates ────────────────────────────────────────────────────────
   updateNodeData: (nodeId, data) => {
+    get().pushSnapshot()
     set((state) => ({
       nodes: state.nodes.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, ...data } } : n),
     }))
   },
 
   updateNodeStyle: (nodeId, style) => {
+    get().pushSnapshot()
     set((state) => ({
       nodes: state.nodes.map((n) => n.id === nodeId ? { ...n, style: { ...n.style, ...style } } : n),
     }))
   },
 
   updateNodePosition: (nodeId, position) => {
+    get().pushSnapshot()
     set((state) => ({
       nodes: state.nodes.map((n) => n.id === nodeId ? { ...n, position } : n),
     }))
@@ -187,6 +249,7 @@ const useWorkspaceStore = create((set, get) => ({
 
   // ── Grouping ─────────────────────────────────────────────────────────────────
   groupSelected: () => {
+    get().pushSnapshot()
     const nodes = get().nodes;
     const selected = nodes.filter(n => n.selected && n.type !== 'group');
     if (selected.length < 2) return;
@@ -243,6 +306,7 @@ const useWorkspaceStore = create((set, get) => ({
   },
 
   ungroupSelected: () => {
+    get().pushSnapshot()
     const nodes = get().nodes;
     const selectedGroups = nodes.filter(n => n.selected && n.type === 'group');
     if (selectedGroups.length === 0) return;
@@ -271,14 +335,17 @@ const useWorkspaceStore = create((set, get) => ({
 
   // ── Layer / Z-Index ──────────────────────────────────────────────────────────
   bringToFront: (nodeId) => {
+    get().pushSnapshot()
     const maxZ = get().nodes.reduce((max, n) => Math.max(max, n.style?.zIndex || 0), 0)
     get().updateNodeStyle(nodeId, { zIndex: maxZ + 1 })
   },
   sendToBack: (nodeId) => {
+    get().pushSnapshot()
     const minZ = get().nodes.reduce((min, n) => Math.min(min, n.style?.zIndex || 0), Infinity)
     get().updateNodeStyle(nodeId, { zIndex: Math.max(0, minZ - 1) })
   },
   toggleLock: (nodeId) => {
+    get().pushSnapshot()
     const node = get().nodes.find((n) => n.id === nodeId)
     if (!node) return
     get().updateNodeStyle(nodeId, { locked: !node.style?.locked })

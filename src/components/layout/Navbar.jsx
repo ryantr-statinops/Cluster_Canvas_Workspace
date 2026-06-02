@@ -5,7 +5,7 @@ import {
   Layers, Palette, Keyboard, Settings, ChevronDown,
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Square, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
-  ArrowUp,
+  ArrowUp, Undo2, Redo2,
 } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 
@@ -68,7 +68,7 @@ const Navbar = () => {
   const { 
     viewMode, setViewMode, openModal, addNode, nodes, edges,
     workspaces, activeWorkspaceId, createWorkspace, switchWorkspace,
-    selectNode
+    selectNode, undo, redo, undoStack, redoStack
   } = useWorkspaceStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
@@ -465,6 +465,26 @@ const Navbar = () => {
         >
           <LayoutGrid size={14} />
           <span style={{ fontSize: 12 }}>Grid</span>
+        </button>
+
+        {/* Undo / Redo */}
+        <button
+          className="icon-btn"
+          onClick={undo}
+          disabled={undoStack.length === 0}
+          title="Undo (Ctrl+Z)"
+          style={{ opacity: undoStack.length === 0 ? 0.4 : 1 }}
+        >
+          <Undo2 size={14} />
+        </button>
+        <button
+          className="icon-btn"
+          onClick={redo}
+          disabled={redoStack.length === 0}
+          title="Redo (Ctrl+Shift+Z)"
+          style={{ opacity: redoStack.length === 0 ? 0.4 : 1 }}
+        >
+          <Redo2 size={14} />
         </button>
 
         {/* Divider */}

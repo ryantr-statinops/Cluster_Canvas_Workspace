@@ -72,6 +72,14 @@ function App() {
     } else if (ctrl && e.key === '0') {
       e.preventDefault()
       // Fit view is handled inside CanvasContainer
+    } else if (ctrl && e.key === 'z') {
+      e.preventDefault()
+      const state = useWorkspaceStore.getState()
+      if (shift) {
+        if (state.redoStack.length > 0) state.redo()
+      } else {
+        if (state.undoStack.length > 0) state.undo()
+      }
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
       const state = useWorkspaceStore.getState()
       const selectedEdge = state.edges.find(e => e.selected)
