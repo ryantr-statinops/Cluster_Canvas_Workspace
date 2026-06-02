@@ -98,11 +98,7 @@ const BaseNode = ({ id, type, data, style, selected, children, headerControls, n
       style={{
         zIndex:  style?.zIndex || 1,
         opacity: style?.opacity ?? 1,
-        borderColor: selected
-          ? 'var(--accent)'
-          : style?.outline
-          ? style.outline
-          : undefined,
+        borderColor: style?.outline || undefined,
         backgroundColor: style?.background || undefined,
       }}
       onClick={handleSelect}
@@ -117,8 +113,8 @@ const BaseNode = ({ id, type, data, style, selected, children, headerControls, n
         isVisible={selected && !isLocked} 
         minWidth={200} 
         minHeight={150} 
-        lineStyle={{ borderWidth: 2 }}
-        handleStyle={{ width: 8, height: 8, background: 'var(--accent)', border: 'none' }}
+        lineStyle={{ opacity: 0, pointerEvents: 'none' }}
+        handleStyle={{ width: 8, height: 8, background: 'var(--accent)', border: 'none', borderRadius: 2 }}
         onResize={(e, params) => {
            updateNodeStyle(id, { width: params.width, height: params.height })
         }}
