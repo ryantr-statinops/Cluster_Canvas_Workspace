@@ -4,9 +4,11 @@ import {
   X, Lock, Unlock, Layers, ArrowUp, ArrowDown,
   Copy, Trash2, ChevronUp, ChevronDown,
   Globe, StickyNote, CheckSquare, Clock, Calendar,
-  Image, Video, Gauge, Timer, Pencil, Square,
+  Image, Video, Gauge, Timer, Pencil, Square, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
+
 } from 'lucide-react'
-import useWorkspaceStore, { NODE_DEFAULTS } from '../../store/useWorkspaceStore'
+import useWorkspaceStore from '../../store/useWorkspaceStore'
+import { getDefaultSize } from '../../features/nodes/registry/nodeRegistry'
 
 
 const TYPE_ICONS = {
@@ -21,6 +23,11 @@ const TYPE_ICONS = {
   countdown: Timer,
   draw:      Pencil,
   group:     Square,
+  entity:    FileText,
+  context:   BookOpen,
+  collection: FilterIcon,
+  portal:    Compass,
+  relation:  GitBranch,
 }
 
 const Row = ({ label, children }) => (
@@ -175,7 +182,7 @@ const PropertiesPanel = () => {
                   min={200}
                   step={1}
                   disabled={isLocked}
-                  value={Math.round(selectedNode.style?.width ?? NODE_DEFAULTS[selectedNode.type]?.width ?? 280)}
+                  value={Math.round(selectedNode.style?.width ?? getDefaultSize(selectedNode.type)?.width ?? 280)}
                   onChange={(e) => updateNodeStyle(selectedNodeId, { width: parseInt(e.target.value || '0', 10) })}
                   style={{ height: 30, opacity: isLocked ? 0.6 : 1 }}
                   className="field-input"
@@ -191,7 +198,7 @@ const PropertiesPanel = () => {
                   min={150}
                   step={1}
                   disabled={isLocked}
-                  value={Math.round(selectedNode.style?.height ?? NODE_DEFAULTS[selectedNode.type]?.height ?? 220)}
+                  value={Math.round(selectedNode.style?.height ?? getDefaultSize(selectedNode.type)?.height ?? 220)}
                   onChange={(e) => updateNodeStyle(selectedNodeId, { height: parseInt(e.target.value || '0', 10) })}
                   style={{ height: 30, opacity: isLocked ? 0.6 : 1 }}
                   className="field-input"

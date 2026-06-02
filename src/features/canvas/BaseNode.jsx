@@ -4,9 +4,10 @@ import { NodeResizer } from 'reactflow'
 import {
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Layers,
-  Lock, Unlock, X, Maximize2, Grip, Settings2
+  Lock, Unlock, X, Maximize2, Grip, Settings2,
+  FileText, BookOpen, Filter, Compass, GitBranch
 } from 'lucide-react'
-import useWorkspaceStore, { NODE_DEFAULTS } from '../../store/useWorkspaceStore'
+import useWorkspaceStore from '../../store/useWorkspaceStore'
 
 const TYPE_ICONS = {
   website:   Globe,
@@ -20,9 +21,14 @@ const TYPE_ICONS = {
   countdown: Timer,
   draw:      Pencil,
   group:     Layers,
+  entity:    FileText,
+  context:   BookOpen,
+  collection: Filter,
+  portal:    Compass,
+  relation:  GitBranch,
 }
 
-const TYPE_LABELS = {
+export const TYPE_LABELS = {
   website:   'WEBSITE',
   notes:     'NOTES',
   todo:      'TODO',
@@ -34,6 +40,11 @@ const TYPE_LABELS = {
   countdown: 'COUNTDOWN',
   draw:      'DRAW',
   group:     'GROUP',
+  entity:    'ENTITY',
+  context:   'CONTEXT',
+  collection: 'COLLECTION',
+  portal:    'PORTAL',
+  relation:  'RELATION',
 }
 
 const BaseNode = ({ id, type, data, style, selected, children, headerControls, noPadding }) => {

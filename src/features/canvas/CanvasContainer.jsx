@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react'
+import React, { useCallback, useMemo, useRef, useEffect } from 'react'
 import ReactFlow, {
   Controls,
   Background,
@@ -11,39 +11,75 @@ import 'reactflow/dist/style.css'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LayoutGrid, Compass, Maximize, Minimize } from 'lucide-react'
 
-import useWorkspaceStore, { NODE_DEFAULTS } from '../../store/useWorkspaceStore'
+import useWorkspaceStore from '../../store/useWorkspaceStore'
+import { getNodeTypes, getDefaultSize, initRegistry, setNodeComponent } from '../../features/nodes/registry/nodeRegistry'
 import GridOverlay from '../../components/ui/GridOverlay'
+import StyledEdge from '../edges/StyledEdge'
+
+// Custom edge types for React Flow
+const EDGE_TYPES = {
+  styled: StyledEdge,
+}
 
 import TodoNode     from '../nodes/TodoNode'
 import NotesNode    from '../nodes/NotesNode'
 import WebsiteNode  from '../nodes/WebsiteNode'
 import GroupNode    from '../nodes/GroupNode'
 import DrawNode     from '../nodes/DrawNode'
+import EntityNode   from '../nodes/EntityNode'
+import ContextNode  from '../nodes/ContextNode'
+import CollectionNode from '../nodes/CollectionNode'
+import PortalNode     from '../nodes/PortalNode'
+import RelationNode   from '../nodes/RelationNode'
 
-// Define outside component to avoid recreation on each render
-const NODE_TYPES = {
-  todo:     TodoNode,
-  notes:    NotesNode,
-  website:  WebsiteNode,
-  group:    GroupNode,
-  draw:     DrawNode,
-}
+// Init registry with components on first import
+initRegistry()
+setNodeComponent('todo',       TodoNode)
+setNodeComponent('notes',      NotesNode)
+setNodeComponent('website',    WebsiteNode)
+setNodeComponent('group',      GroupNode)
+setNodeComponent('draw',       DrawNode)
+setNodeComponent('entity',     EntityNode)
+setNodeComponent('context',    ContextNode)
+setNodeComponent('collection', CollectionNode)
+setNodeComponent('portal',     PortalNode)
+setNodeComponent('relation',   RelationNode)
+
+// Get node types from registry
+const NODE_TYPES = getNodeTypes()
 
 const CanvasInner = () => {
   const {
     nodes,
+    edges,
     onNodesChange,
+    onEdgesChange,
+    onConnect,
     selectNode,
+    selectEdge,
     clearSelection,
+    clearEdgeSelection,
+    setEdges,
     viewMode,
     isFullScreen,
     toggleFullScreen
   } = useWorkspaceStore()
 
-  const { fitView, zoomIn, zoomOut } = useReactFlow()
-  const wrapperRef = useRef(null)
+  // Listen for custom delete-edge event from StyledEdge
+  useEffect(() => {
+    const handler = (e) => {
+      const edgeId = e.detail?.edgeId
+      if (edgeId) {
+        const state = useWorkspaceStore.getState()
+        state.setEdges(state.edges.filter(edge => edge.id !== edgeId))
+      }
+    }
+    window.addEventListener('delete-edge', handler)
+    return () => window.removeEventListener('delete-edge', handler)
+  }, [])
 
-  // Map our store nodes to React Flow format
+  const { fitView, zoomIn, zoomOut } = useReactFlow()
+  const wrapperRef = useRef(null)    // Map our store nodes to React Flow format
   const rfNodes = useMemo(() => nodes.map(node => ({
     id:       node.id,
     type:     node.type,
@@ -53,10 +89,10 @@ const CanvasInner = () => {
     style:    node.style,
     draggable: !node.style?.locked,
     // Pass width/height to React Flow so fitView calculates correctly
-    width:  node.style?.width  ?? (NODE_DEFAULTS[node.type]?.width  || 280),
-    height: node.style?.height ?? (NODE_DEFAULTS[node.type]?.height || 220),
-    // For group nodes (parent containers)
-    ...(node.parentId ? { parentNode: node.parentId, extent: 'parent' } : {}),
+    width:  node.style?.width  ?? (getDefaultSize(node.type)?.width  || 280),
+    height: node.style?.height ?? (getDefaultSize(node.type)?.height || 220),
+    // For group nodes (parent containers) — use parentNode from store
+    ...(node.parentNode ? { parentNode: node.parentNode, extent: 'parent' } : {}),
   })), [nodes])
 
   const handleNodeClick = useCallback((e, node) => {
@@ -66,7 +102,8 @@ const CanvasInner = () => {
 
   const handlePaneClick = useCallback(() => {
     clearSelection()
-  }, [clearSelection])
+    clearEdgeSelection()
+  }, [clearSelection, clearEdgeSelection])
 
   const handleFitView = useCallback(() => {
     fitView({ padding: 0.15, duration: 500 })
@@ -89,10 +126,17 @@ const CanvasInner = () => {
     >
       <ReactFlow
         nodes={rfNodes}
-        edges={[]}
+        edges={edges}
         onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
         nodeTypes={NODE_TYPES}
+        edgeTypes={EDGE_TYPES}
         onNodeClick={handleNodeClick}
+        onEdgeClick={(e, edge) => {
+          e.stopPropagation()
+          selectEdge(edge.id)
+        }}
         onPaneClick={handlePaneClick}
         fitView={false}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
@@ -105,8 +149,10 @@ const CanvasInner = () => {
         deleteKeyCode={null}   // We handle delete ourselves
         proOptions={{ hideAttribution: true }}
         nodesDraggable
-        nodesConnectable={false}
+        nodesConnectable={true}
         elementsSelectable
+        connectionLineStyle={{ stroke: 'var(--accent)', strokeWidth: 2, strokeDasharray: '5 3' }}
+        defaultEdgeOptions={{ type: 'styled', data: { type: 'default', label: '' } }}
       >
         {/* Background Grid */}
         <Background

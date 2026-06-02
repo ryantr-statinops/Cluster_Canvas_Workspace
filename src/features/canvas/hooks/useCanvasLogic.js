@@ -1,22 +1,18 @@
 import { useCallback } from 'react'
 import useWorkspaceStore from '../../../store/useWorkspaceStore'
+import { createBaseNode } from '../../registry/nodeSchema'
+import { getDefaultData } from '../../registry/nodeRegistry'
 
+/**
+ * createNode now uses the Unified Schema + Registry.
+ * Accepts (type, position, extraData) and delegates to store.addNode.
+ */
 export const useCanvasLogic = () => {
   const { addNode } = useWorkspaceStore()
 
   const createNode = useCallback((type, position = { x: 100, y: 100 }, data = {}) => {
-    const id = `${type}-${Date.now()}`
-    const newNode = {
-      id,
-      type,
-      position,
-      data: { 
-        label: `New ${type}`,
-        ...data 
-      },
-    }
-    addNode(newNode)
-    return newNode
+    const defaultData = getDefaultData(type)
+    addNode(type, { ...defaultData, ...data })
   }, [addNode])
 
   return {

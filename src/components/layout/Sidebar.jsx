@@ -5,11 +5,16 @@ import {
   Image, Video, Gauge, Timer, Pencil, Layers,
   ChevronDown, ChevronRight, FolderOpen, Star,
   History, Keyboard, Palette, LayoutGrid, Plus,
-  PanelLeft,
+  PanelLeft, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
 } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 
 const NODE_CATEGORIES = [
+  { type: 'relation',  label: 'Relation',  icon: GitBranch },
+  { type: 'entity',    label: 'Entity',    icon: FileText },
+  { type: 'context',   label: 'Context',   icon: BookOpen },
+  { type: 'collection',label: 'Collection',icon: FilterIcon },
+  { type: 'portal',    label: 'Portal',    icon: Compass },
   { type: 'website',   label: 'Website',   icon: Globe },
   { type: 'notes',     label: 'Notes',     icon: StickyNote },
   { type: 'todo',      label: 'To-do',     icon: CheckSquare },

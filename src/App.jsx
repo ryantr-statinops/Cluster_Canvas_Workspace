@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion'
 import Navbar          from './components/layout/Navbar'
 import Sidebar         from './components/layout/Sidebar'
 import PropertiesPanel from './components/layout/PropertiesPanel'
+import EdgePropertiesPanel from './components/edges/EdgePropertiesPanel'
 import CanvasContainer from './features/canvas/CanvasContainer'
 import ThemeModal      from './components/ui/ThemeModal'
 import ShortcutModal   from './components/ui/ShortcutModal'
@@ -12,8 +13,10 @@ import EmptyState      from './components/ui/EmptyState'
 
 import useWorkspaceStore from './store/useWorkspaceStore'
 import useThemeStore     from './store/useThemeStore'
+import { initPersistence } from './utils/persistence'
 
 function App() {
+  const store = useWorkspaceStore
   const {
     nodes,
     selectedNodeId,
@@ -28,15 +31,17 @@ function App() {
     groupSelected,
     ungroupSelected,
     propertiesPanelOpen,
+    selectedEdgeId,
     isFullScreen,
   } = useWorkspaceStore()
 
   const { init } = useThemeStore()
 
-  // Init theme CSS variables on mount
+  // Init theme CSS variables + persistence on mount
   useEffect(() => {
     init()
-  }, [init])
+    initPersistence(store)
+  }, [init, store])
 
   // ── Global Keyboard Shortcuts ──────────────────────────────────────────────
   const handleKeyDown = useCallback((e) => {
@@ -68,7 +73,13 @@ function App() {
       e.preventDefault()
       // Fit view is handled inside CanvasContainer
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
-      if (selectedNodeId) removeNode(selectedNodeId)
+      const state = useWorkspaceStore.getState()
+      const selectedEdge = state.edges.find(e => e.selected)
+      if (selectedEdge) {
+        state.setEdges(state.edges.filter(e => e.id !== selectedEdge.id))
+      } else if (selectedNodeId) {
+        removeNode(selectedNodeId)
+      }
     } else if (e.key === 'Escape') {
       if (activeModal) closeModal()
     }
@@ -112,7 +123,8 @@ function App() {
 
         {/* Right Properties Panel (conditionally shown) */}
         <AnimatePresence>
-          {propertiesPanelOpen && <PropertiesPanel key="props" />}
+          {propertiesPanelOpen && selectedEdgeId && <EdgePropertiesPanel key="edge-props" />}
+          {propertiesPanelOpen && !selectedEdgeId && <PropertiesPanel key="props" />}
         </AnimatePresence>
       </div>
 

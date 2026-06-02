@@ -1,43 +1,31 @@
 import { create } from 'zustand'
-import { applyNodeChanges } from 'reactflow'
+import { applyNodeChanges, applyEdgeChanges } from 'reactflow'
 import { nanoid } from 'nanoid'
 
-// Default node dimensions per type
-const NODE_DEFAULTS = {
-  notes:   { width: 280, height: 220 },
-  todo:    { width: 280, height: 240 },
-  website: { width: 400, height: 300 },
-  draw:    { width: 360, height: 300 },
-  group:   { width: 360, height: 300 },
-}
-
-// Default data templates per node type
-const nodeDataTemplates = {
-  notes:   { title: 'New Note', content: 'Start writing...' },
-  todo:    { title: 'To-Do List', tasks: [{ id: nanoid(), text: 'New task', done: false }] },
-  website: { title: 'Website', url: 'https://vercel.com' },
-  draw:    { title: 'Sketch' },
-}
+import { createBaseNode } from '../features/nodes/registry/nodeSchema'
+import { getDefaultSize, getDefaultData } from '../features/nodes/registry/nodeRegistry'
 
 const useWorkspaceStore = create((set, get) => ({
   // ── Core State ──────────────────────────────────────────────────────────────
-  workspaces: [{ id: 'default', name: 'Main Workspace', nodes: [], gridPositions: {} }],
+  workspaces: [{ id: 'default', name: 'Main Workspace', nodes: [], edges: [], gridPositions: {} }],
   activeWorkspaceId: 'default',
-  nodes: [], // Active nodes injected from workspace switch
-  viewMode: 'flex', // Global root view mode
+  nodes: [],
+  edges: [], // Active edges from React Flow
+  viewMode: 'flex',
   
-  selectedNodeId: null, // Still keeps track of Primary selection for Properties
+  selectedNodeId: null, // Primary selection for Properties
   sidebarOpen: true,
   propertiesPanelOpen: false,
   activeModal: null,
 
   // ── Workspace Switching ──────────────────────────────────────────────────────
   createWorkspace: () => {
-    const newWs = { id: nanoid(6), name: `Workspace ${get().workspaces.length + 1}`, nodes: [], gridPositions: {} }
+    const newWs = { id: nanoid(6), name: `Workspace ${get().workspaces.length + 1}`, nodes: [], edges: [], gridPositions: {} }
     set(state => ({
-      workspaces: [...state.workspaces.map(ws => ws.id === state.activeWorkspaceId ? { ...ws, nodes: state.nodes } : ws), newWs],
+      workspaces: [...state.workspaces.map(ws => ws.id === state.activeWorkspaceId ? { ...ws, nodes: state.nodes, edges: state.edges } : ws), newWs],
       activeWorkspaceId: newWs.id,
       nodes: [],
+      edges: [],
       selectedNodeId: null,
       propertiesPanelOpen: false,
       viewMode: 'flex'
@@ -48,16 +36,17 @@ const useWorkspaceStore = create((set, get) => ({
     if (workspaceId === get().activeWorkspaceId) return;
     set(state => {
       const updatedWorkspaces = state.workspaces.map(ws => 
-        ws.id === state.activeWorkspaceId ? { ...ws, nodes: state.nodes } : ws
+        ws.id === state.activeWorkspaceId ? { ...ws, nodes: state.nodes, edges: state.edges } : ws
       )
       const nextWs = updatedWorkspaces.find(ws => ws.id === workspaceId)
       return {
         workspaces: updatedWorkspaces,
         activeWorkspaceId: workspaceId,
         nodes: nextWs.nodes,
+        edges: nextWs.edges || [],
         selectedNodeId: null,
         propertiesPanelOpen: false,
-        viewMode: 'flex' // Reset to flex on switch
+        viewMode: 'flex'
       }
     })
   },
@@ -66,47 +55,72 @@ const useWorkspaceStore = create((set, get) => ({
   onNodesChange: (changes) => {
     set({ nodes: applyNodeChanges(changes, get().nodes) })
   },
+  onEdgesChange: (changes) => {
+    set({ edges: applyEdgeChanges(changes, get().edges) })
+  },
+  onConnect: (connection) => {
+    const { source, target } = connection
+    if (!source || !target) return
+    // Prevent self-connections
+    if (source === target) return
+    // Prevent duplicate edges
+    const existing = get().edges.find(e => e.source === source && e.target === target)
+    if (existing) return
 
-  // ── Node CRUD ────────────────────────────────────────────────────────────────
-  addNode: (type, extraData = {}) => {
-    const id = `${type}-${nanoid(6)}`
-    const defaults = NODE_DEFAULTS[type] || { width: 280, height: 220 }
-    const dataTemplate = nodeDataTemplates[type] || { title: 'Node' }
-
-    const viewportCenter = {
-      x: (window.innerWidth / 2) - (defaults.width / 2) - 150,
-      y: (window.innerHeight / 2) - (defaults.height / 2) - 32,
+    const newEdge = {
+      id: `edge-${nanoid(8)}`,
+      source,
+      target,
+      type: 'styled',
+      data: {
+        type: 'default',
+        label: '',
+        createdAt: Date.now(),
+      },
     }
+    set((state) => ({ edges: [...state.edges, newEdge] }))
+  },
+  updateEdgeData: (edgeId, data) => {
+    set((state) => ({
+      edges: state.edges.map(e => e.id === edgeId ? { ...e, data: { ...e.data, ...data } } : e),
+    }))
+  },
+  setEdges: (edges) => set({ edges }),
 
+  // ── Node CRUD (via Unified Schema) ──────────────────────────────────────────
+  addNode: (type, extraData = {}) => {
+    const size = getDefaultSize(type)
+    const defaultData = getDefaultData(type)
     const maxZ = get().nodes.reduce((max, n) => Math.max(max, n.style?.zIndex || 0), 0)
 
-    const newNode = {
-      id,
+    const viewportCenter = {
+      x: (window.innerWidth / 2) - (size.width / 2) - 150,
+      y: (window.innerHeight / 2) - (size.height / 2) - 32,
+    }
+
+    const newNode = createBaseNode({
       type,
       position: viewportCenter,
-      data: { ...dataTemplate, ...extraData },
+      data: { ...defaultData, ...extraData },
       style: {
-        width: defaults.width,
-        height: defaults.height,
+        width: size.width,
+        height: size.height,
         zIndex: maxZ + 1,
-        opacity: 1,
-        locked: false,
-        outline: '#88c0d0',
-        background: '',
       },
-      selected: false,
-    }
+    })
+
+    if (!newNode) return
 
     set((state) => ({
       nodes: [...state.nodes, newNode],
-      selectedNodeId: id,
-      // Do not auto-open properties panel on add
+      selectedNodeId: newNode.id,
     }))
   },
 
   removeNode: (nodeId) => {
     set((state) => ({
       nodes: state.nodes.filter((n) => n.id !== nodeId && n.parentNode !== nodeId),
+      edges: state.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
       selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
       propertiesPanelOpen: state.selectedNodeId === nodeId ? false : state.propertiesPanelOpen,
     }))
@@ -115,18 +129,19 @@ const useWorkspaceStore = create((set, get) => ({
   duplicateNode: (nodeId) => {
     const node = get().nodes.find((n) => n.id === nodeId)
     if (!node || node.type === 'group') return
-    const newId = `${node.type}-${nanoid(6)}`
     const maxZ = get().nodes.reduce((max, n) => Math.max(max, n.style?.zIndex || 0), 0)
-    const newNode = {
-      ...node,
-      id: newId,
+
+    const newNode = createBaseNode({
+      id: `${node.type}-${nanoid(6)}`,
+      type: node.type,
       position: { x: node.position.x + 30, y: node.position.y + 30 },
+      data: JSON.parse(JSON.stringify(node.data)),
       style: { ...node.style, zIndex: maxZ + 1 },
-      selected: false,
-    }
+    })
+
     set((state) => ({
       nodes: [...state.nodes, newNode],
-      selectedNodeId: newId,
+      selectedNodeId: newNode.id,
     }))
   },
 
@@ -150,20 +165,27 @@ const useWorkspaceStore = create((set, get) => ({
   },
 
   // ── Selection ────────────────────────────────────────────────────────────────
+  selectedEdgeId: null,
   selectNode: (nodeId) => {
-    set({ selectedNodeId: nodeId }) // Removed properties panel auto-open
+    set({ selectedNodeId: nodeId, selectedEdgeId: null })
+  },
+  selectEdge: (edgeId) => {
+    set({ selectedEdgeId: edgeId, selectedNodeId: null, propertiesPanelOpen: true })
+  },
+  clearEdgeSelection: () => {
+    set({ selectedEdgeId: null })
   },
   openNodeProperties: (nodeId) => {
-    set({ selectedNodeId: nodeId, propertiesPanelOpen: true })
+    set({ selectedNodeId: nodeId, selectedEdgeId: null, propertiesPanelOpen: true })
   },
   closeNodeProperties: () => {
-    set({ propertiesPanelOpen: false })
+    set({ propertiesPanelOpen: false, selectedEdgeId: null })
   },
   clearSelection: () => {
-    set({ selectedNodeId: null, propertiesPanelOpen: false })
+    set({ selectedNodeId: null, selectedEdgeId: null, propertiesPanelOpen: false })
   },
 
-  // ── Grouping ───────────────────────────────────────────────────────────────
+  // ── Grouping ─────────────────────────────────────────────────────────────────
   groupSelected: () => {
     const nodes = get().nodes;
     const selected = nodes.filter(n => n.selected && n.type !== 'group');
@@ -174,11 +196,7 @@ const useWorkspaceStore = create((set, get) => ({
     selected.forEach(n => {
        const w = n.style?.width || 280;
        const h = n.style?.height || 220;
-       
-       // Handle relative positions if they are already in a group? 
-       // For safety let's only group un-grouped nodes.
-       if(n.parentNode) return; 
-
+       if (n.parentNode) return;
        minX = Math.min(minX, n.position.x);
        minY = Math.min(minY, n.position.y);
        maxX = Math.max(maxX, n.position.x + w);
@@ -192,25 +210,24 @@ const useWorkspaceStore = create((set, get) => ({
     const groupPos = { x: minX - padding, y: minY - headerHeight - padding };
     const groupW = (maxX - minX) + padding * 2;
     const groupH = (maxY - minY) + padding * 2 + headerHeight;
-    const groupId = `group-${nanoid(6)}`;
 
-    // Calculate max child Z to place group appropriately underneath
-    const maxZ = get().nodes.reduce((max, n) => Math.max(max, n.style?.zIndex || 0), 0);
-
-    const groupNode = {
-      id: groupId,
+    const groupNode = createBaseNode({
+      id: `group-${nanoid(6)}`,
       type: 'group',
       position: groupPos,
       data: { title: 'New Group' },
-      style: { width: groupW, height: groupH, zIndex: Math.max(0, Object.values(selected)[0]?.style?.zIndex - 1 || 0), opacity: 1, locked: false },
-      selected: true
-    };
+      style: {
+        width: groupW,
+        height: groupH,
+        zIndex: Math.max(0, selected[0]?.style?.zIndex - 1 || 0),
+      },
+    })
 
     const newNodes = nodes.map(n => {
       if (n.selected && !n.parentNode && n.type !== 'group') {
         return {
           ...n,
-          parentNode: groupId,
+          parentNode: groupNode.id,
           extent: 'parent',
           selected: false,
           position: {
@@ -222,7 +239,7 @@ const useWorkspaceStore = create((set, get) => ({
       return n;
     });
 
-    set({ nodes: [...newNodes, groupNode], selectedNodeId: groupId });
+    set({ nodes: [...newNodes, groupNode], selectedNodeId: groupNode.id });
   },
 
   ungroupSelected: () => {
@@ -230,10 +247,9 @@ const useWorkspaceStore = create((set, get) => ({
     const selectedGroups = nodes.filter(n => n.selected && n.type === 'group');
     if (selectedGroups.length === 0) return;
 
-    let updatedNodes = [...nodes];
     const groupIdsToRemove = selectedGroups.map(g => g.id);
 
-    updatedNodes = updatedNodes.map(n => {
+    const updatedNodes = nodes.map(n => {
        if (n.parentNode && groupIdsToRemove.includes(n.parentNode)) {
           const parent = selectedGroups.find(g => g.id === n.parentNode);
           return {
@@ -276,7 +292,7 @@ const useWorkspaceStore = create((set, get) => ({
     const selectedNodes = nodes.filter(n => n.selected && n.type !== 'group')
 
     if (mode === 'grid' && current === 'flex') {
-      if (selectedNodes.length === 0) return; // Grid needs selected nodes
+      if (selectedNodes.length === 0) return;
       set({ viewMode: 'grid' })
     } else if (mode === 'flex' && current === 'grid') {
       set({ viewMode: 'flex' })
@@ -305,4 +321,4 @@ const useWorkspaceStore = create((set, get) => ({
 }))
 
 export default useWorkspaceStore
-export { NODE_DEFAULTS }
+
