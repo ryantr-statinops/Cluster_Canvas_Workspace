@@ -76,8 +76,7 @@
     background: var(--bg-surface);
     border: 1px solid var(--bg-border);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
-    transition: box-shadow 0.2s, border-color 0.2s;
+    transition: border-color 0.2s;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -89,7 +88,7 @@
 
   .node-window.selected {
     border-color: var(--accent) !important;
-    box-shadow: 0 0 0 1px var(--accent), 0 8px 32px rgba(0,0,0,0.4), 0 0 24px var(--accent-glow);
+    box-shadow: 0 0 0 1px var(--accent);
   }
 
   /* Node header */

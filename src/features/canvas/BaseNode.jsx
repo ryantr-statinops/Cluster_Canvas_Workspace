@@ -110,7 +110,7 @@ const BaseNode = ({ id, type, data, style, selected, children, headerControls, n
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-      whileDrag={{ scale: 1.015, boxShadow: '0 20px 60px rgba(0,0,0,0.5)' }}
+      whileDrag={{ scale: 1.015 }}
     >
       <NodeResizer 
         color="var(--accent)" 
