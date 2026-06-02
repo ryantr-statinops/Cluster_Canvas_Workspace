@@ -214,22 +214,23 @@ const CanvasInner = () => {
         <AnimatePresence>
           {(isMoving || isHoveringMiniMap) && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              initial={{ opacity: 0, scale: 0.7, y: 10 }}
+              animate={{ opacity: 1, scale: 0.8, y: 0 }}
+              exit={{ opacity: 0, scale: 0.7, y: 10 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               onMouseEnter={() => setIsHoveringMiniMap(true)}
               onMouseLeave={() => setIsHoveringMiniMap(false)}
               style={{
                 position: 'absolute',
                 bottom: 24,
-                left: 176,
+                right: 24,
                 zIndex: 10,
+                transformOrigin: 'bottom right',
               }}
             >
               <MiniMap
-                position="bottom-left"
-                style={{ margin: 0, position: 'relative', bottom: 'auto', left: 'auto' }}
+                position="bottom-right"
+                style={{ margin: 0, position: 'relative', bottom: 'auto', right: 'auto' }}
                 nodeColor="var(--bg-elevated)"
                 maskColor="rgba(0,0,0,0.4)"
                 nodeStrokeColor="var(--bg-border)"
