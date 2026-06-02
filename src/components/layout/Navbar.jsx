@@ -5,9 +5,15 @@ import {
   Layers, Palette, Keyboard, Settings, ChevronDown,
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Square, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
-  ArrowUp, Undo2, Redo2,
+  ArrowUp, Undo2, Redo2, Shuffle, Trash2, Tag,
 } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
+
+// ── Layout directions ─────────────────────────────────────────────────
+const LAYOUT_DIRECTIONS = [
+  { value: 'TB', label: 'Top → Bottom', icon: ArrowUp },
+  { value: 'LR', label: 'Left → Right',  icon: ArrowUp },
+]
 
 const NODE_QUICK_ADD = [
   { type: 'relation',  label: 'Relation',  icon: GitBranch },
@@ -68,12 +74,17 @@ const Navbar = () => {
   const { 
     viewMode, setViewMode, openModal, addNode, nodes, edges,
     workspaces, activeWorkspaceId, createWorkspace, switchWorkspace,
-    selectNode, undo, redo, undoStack, redoStack
+    selectNode, undo, redo, undoStack, redoStack,
+    applyLayout, applyLayoutToSelected, batchUpdateNodes, batchRemoveNodes
   } = useWorkspaceStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const [addMenuOpen, setAddMenuOpen] = useState(false)
   const [workspaceMenuOpen, setWorkspaceMenuOpen] = useState(false)
+  const [layoutMenuOpen, setLayoutMenuOpen] = useState(false)
+  const [batchMenuOpen, setBatchMenuOpen] = useState(false)
+
+  const selectedCount = nodes.filter(n => n.selected).length
 
   const handleAddNode = useCallback((type) => {
     addNode(type)
@@ -466,6 +477,219 @@ const Navbar = () => {
           <LayoutGrid size={14} />
           <span style={{ fontSize: 12 }}>Grid</span>
         </button>
+
+        {/* Auto-Layout */}
+        <div style={{ position: 'relative' }}>
+          <button
+            className="icon-btn"
+            onClick={() => setLayoutMenuOpen(s => !s)}
+            title="Auto-layout graph"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <Shuffle size={14} />
+          </button>
+
+          {layoutMenuOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 98 }}
+                onClick={() => setLayoutMenuOpen(false)}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.12 }}
+                style={{
+                  position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                  background: 'var(--bg-surface)', border: '1px solid var(--bg-border)',
+                  borderRadius: 10, padding: 6, zIndex: 99, minWidth: 160,
+                  boxShadow: '0 12px 36px rgba(0,0,0,0.4)',
+                  display: 'flex', flexDirection: 'column', gap: 2,
+                }}
+              >
+                <div style={{
+                  padding: '4px 8px', fontSize: 9, fontWeight: 600,
+                  color: 'var(--text-muted)', textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                }}>
+                  Layout all nodes
+                </div>
+                {LAYOUT_DIRECTIONS.map(d => (
+                  <button
+                    key={d.value}
+                    onClick={() => { applyLayout(d.value); setLayoutMenuOpen(false); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '6px 8px', borderRadius: 6, border: 'none',
+                      background: 'transparent', cursor: 'pointer',
+                      fontSize: 11, color: 'var(--text-secondary)', textAlign: 'left',
+                      transition: 'background 0.1s',
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <d.icon size={11} style={{ color: 'var(--accent)', transform: d.value === 'LR' ? 'rotate(90deg)' : 'none' }} />
+                    {d.label}
+                  </button>
+                ))}
+                {selectedCount > 0 && (
+                  <>
+                    <div style={{ height: 1, background: 'var(--bg-border)', margin: '4px 0' }} />
+                    <div style={{
+                      padding: '4px 8px', fontSize: 9, fontWeight: 600,
+                      color: 'var(--text-muted)', textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}>
+                      Selected only ({selectedCount})
+                    </div>
+                    {LAYOUT_DIRECTIONS.map(d => (
+                      <button
+                        key={`sel-${d.value}`}
+                        onClick={() => { applyLayoutToSelected(d.value); setLayoutMenuOpen(false); }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 6,
+                          padding: '6px 8px', borderRadius: 6, border: 'none',
+                          background: 'transparent', cursor: 'pointer',
+                          fontSize: 11, color: 'var(--text-secondary)', textAlign: 'left',
+                          transition: 'background 0.1s',
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
+                        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <d.icon size={11} style={{ color: 'var(--accent)', transform: d.value === 'LR' ? 'rotate(90deg)' : 'none' }} />
+                        {d.label}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </motion.div>
+            </>
+          )}
+        </div>
+
+        {/* Batch Operations */}
+        {selectedCount > 0 && (
+          <div style={{ position: 'relative' }}>
+            <button
+              className="btn-ghost"
+              onClick={() => setBatchMenuOpen(s => !s)}
+              style={{ gap: 4, height: 30, fontSize: 11 }}
+            >
+              <CheckSquare size={12} />
+              <span>{selectedCount}</span>
+              <ChevronDown size={10} />
+            </button>
+
+            {batchMenuOpen && (
+              <>
+                <div
+                  style={{ position: 'fixed', inset: 0, zIndex: 98 }}
+                  onClick={() => setBatchMenuOpen(false)}
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.12 }}
+                  style={{
+                    position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                    background: 'var(--bg-surface)', border: '1px solid var(--bg-border)',
+                    borderRadius: 10, padding: 6, zIndex: 99, minWidth: 160,
+                    boxShadow: '0 12px 36px rgba(0,0,0,0.4)',
+                    display: 'flex', flexDirection: 'column', gap: 2,
+                  }}
+                >
+                  <div style={{
+                    padding: '4px 8px', fontSize: 9, fontWeight: 600,
+                    color: 'var(--text-muted)', textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}>
+                    Batch actions ({selectedCount} nodes)
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const ids = nodes.filter(n => n.selected).map(n => n.id)
+                      batchUpdateNodes(ids, { status: 'active' })
+                      setBatchMenuOpen(false)
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '6px 8px', borderRadius: 6, border: 'none',
+                      background: 'transparent', cursor: 'pointer',
+                      fontSize: 11, color: 'var(--text-secondary)', textAlign: 'left',
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <Tag size={11} style={{ color: 'var(--accent)' }} />
+                    Set status → Active
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const ids = nodes.filter(n => n.selected).map(n => n.id)
+                      batchUpdateNodes(ids, { status: 'archived' })
+                      setBatchMenuOpen(false)
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '6px 8px', borderRadius: 6, border: 'none',
+                      background: 'transparent', cursor: 'pointer',
+                      fontSize: 11, color: 'var(--text-secondary)', textAlign: 'left',
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <Tag size={11} style={{ color: 'var(--text-muted)' }} />
+                    Set status → Archived
+                  </button>
+
+                  <div style={{ height: 1, background: 'var(--bg-border)', margin: '4px 0' }} />
+
+                  <button
+                    onClick={() => {
+                      const ids = nodes.filter(n => n.selected).map(n => n.id)
+                      batchUpdateNodes(ids, { color: '#60a5fa' })
+                      setBatchMenuOpen(false)
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '6px 8px', borderRadius: 6, border: 'none',
+                      background: 'transparent', cursor: 'pointer',
+                      fontSize: 11, color: 'var(--text-secondary)', textAlign: 'left',
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <Pencil size={11} style={{ color: 'var(--accent)' }} />
+                    Set color → Blue
+                  </button>
+
+                  <div style={{ height: 1, background: 'var(--bg-border)', margin: '4px 0' }} />
+
+                  <button
+                    onClick={() => {
+                      const ids = nodes.filter(n => n.selected).map(n => n.id)
+                      batchRemoveNodes(ids)
+                      setBatchMenuOpen(false)
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '6px 8px', borderRadius: 6, border: 'none',
+                      background: 'transparent', cursor: 'pointer',
+                      fontSize: 11, color: '#bf616a', textAlign: 'left',
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'rgba(191,97,106,0.1)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <Trash2 size={11} />
+                    Delete all selected
+                  </button>
+                </motion.div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Undo / Redo */}
         <button

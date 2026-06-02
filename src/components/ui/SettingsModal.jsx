@@ -1,9 +1,10 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Download, Upload, Clock, Trash2, RotateCcw, AlertTriangle } from 'lucide-react'
+import { X, Download, Upload, Clock, Trash2, RotateCcw, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 import { exportWorkspace, importWorkspace } from '../../utils/workspaceIO'
 import { loadSnapshotHistory, restoreSnapshot, deleteSnapshot, clearSavedState, hasPendingRecovery, loadRecovery, clearRecovery } from '../../utils/persistence'
+import { getAIConfig, saveAIConfig, hasApiKey } from '../../utils/ai'
 
 const Toggle = ({ label, value, onChange, description }) => (
   <div style={{
@@ -62,6 +63,8 @@ const SettingsModal = () => {
   const [snapshots, setSnapshots] = useState([])
   const [importStatus, setImportStatus] = useState(null)
   const [showRecovery, setShowRecovery] = useState(false)
+  const [aiConfig, setAiConfig] = useState(getAIConfig())
+  const [showApiKey, setShowApiKey] = useState(false)
 
   const toggle = (key) => setSettings(s => ({ ...s, [key]: !s[key] }))
 
@@ -131,6 +134,7 @@ const SettingsModal = () => {
   const tabs = [
     { id: 'canvas',   label: 'Canvas' },
     { id: 'data',     label: 'Data' },
+    { id: 'ai',       label: 'AI' },
     { id: 'snapshots', label: 'History' },
   ]
 
@@ -327,6 +331,108 @@ const SettingsModal = () => {
                 <Trash2 size={12} />
                 Clear Local Storage
               </button>
+            </>
+          )}
+
+          {/* ── AI Tab ── */}
+          {activeTab === 'ai' && (
+            <>
+              <p style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.08em',
+                textTransform: 'uppercase', marginBottom: 8 }}>
+                AI Configuration
+              </p>
+
+              <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 12, lineHeight: 1.5 }}>
+                Connect to an OpenAI-compatible API for smart summarization, AI-powered tag suggestions, and text completion. Without an API key, basic auto-tagging and summarization still work client-side.
+              </p>
+
+              {/* API Key */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                  API Key
+                </label>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  <input
+                    type={showApiKey ? 'text' : 'password'}
+                    className="field-input"
+                    style={{ flex: 1, height: 32, fontSize: 12, padding: '0 10px' }}
+                    placeholder="sk-..."
+                    value={aiConfig.apiKey}
+                    onChange={e => setAiConfig(c => ({ ...c, apiKey: e.target.value }))}
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <button
+                    className="icon-btn"
+                    style={{ width: 28, height: 28, borderRadius: 6 }}
+                    onClick={() => setShowApiKey(s => !s)}
+                    title={showApiKey ? 'Hide key' : 'Show key'}
+                  >
+                    {showApiKey ? <EyeOff size={12} /> : <Eye size={12} />}
+                  </button>
+                </div>
+                {aiConfig.apiKey && (
+                  <span style={{ fontSize: 10, color: hasApiKey() ? 'var(--accent)' : 'var(--text-muted)' }}>
+                    {hasApiKey() ? '✓ Key saved' : 'Click Save to store'}
+                  </span>
+                )}
+              </div>
+
+              {/* Model */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                  Model
+                </label>
+                <select
+                  className="field-input"
+                  value={aiConfig.model}
+                  onChange={e => setAiConfig(c => ({ ...c, model: e.target.value }))}
+                  onClick={e => e.stopPropagation()}
+                  style={{ height: 32, fontSize: 12, padding: '0 10px' }}
+                >
+                  <option value="gpt-4o-mini">GPT-4o Mini (fast, cheap)</option>
+                  <option value="gpt-4o">GPT-4o (powerful)</option>
+                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                  <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                </select>
+              </div>
+
+              {/* Endpoint */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
+                <label style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                  API Endpoint
+                </label>
+                <input
+                  className="field-input"
+                  style={{ height: 32, fontSize: 12, padding: '0 10px' }}
+                  placeholder="https://api.openai.com/v1"
+                  value={aiConfig.endpoint}
+                  onChange={e => setAiConfig(c => ({ ...c, endpoint: e.target.value }))}
+                  onClick={e => e.stopPropagation()}
+                />
+              </div>
+
+              <button
+                onClick={() => { saveAIConfig(aiConfig); setImportStatus({ type: 'success', message: 'AI config saved' }); setTimeout(() => setImportStatus(null), 3000); }}
+                className="btn-primary"
+                style={{ justifyContent: 'center', width: '100%', height: 34, fontSize: 12 }}
+              >
+                Save AI Configuration
+              </button>
+
+              {/* Info box */}
+              <div style={{
+                marginTop: 16, padding: 10, borderRadius: 8,
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--bg-border)',
+                fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.5,
+              }}>
+                <strong style={{ color: 'var(--text-secondary)' }}>Without API key:</strong>
+                Basic auto-tagging (keyword extraction) and extractive summarization work entirely in-browser.
+                <br /><br />
+                <strong style={{ color: 'var(--text-secondary)' }}>With API key:</strong>
+                AI-powered tag suggestions, smart summaries, and text completion via your configured endpoint. Your key is stored only in localStorage.
+              </div>
             </>
           )}
 

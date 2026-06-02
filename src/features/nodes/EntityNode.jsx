@@ -2,10 +2,11 @@ import React, { useState, useCallback } from 'react'
 import { nanoid } from 'nanoid'
 import {
   Circle, Plus, X, Link as LinkIcon, Hash, AlignLeft,
-  GripVertical, ExternalLink,
+  GripVertical, ExternalLink, Sparkles, Loader,
 } from 'lucide-react'
 import BaseNode from '../canvas/BaseNode'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
+import { smartSuggestTags, suggestTags } from '../../utils/ai'
 
 const STATUS_OPTIONS = [
   { value: 'active',   label: 'Active',   color: '#4ade80' },
@@ -43,6 +44,23 @@ const EntityNode = ({ id, data, style, selected }) => {
   // ── Tags ──────────────────────────────────────────────────────────────
   const [tagInput, setTagInput] = useState('')
   const [tagSuggestOpen, setTagSuggestOpen] = useState(false)
+  const [aiTagging, setAiTagging] = useState(false)
+
+  const handleAutoTag = useCallback(async () => {
+    const textToAnalyze = [description, ...(properties || []).map(p => `${p.key}: ${p.value}`)].filter(Boolean).join(' ')
+    if (!textToAnalyze.trim()) return
+    setAiTagging(true)
+    try {
+      const newTags = await smartSuggestTags(textToAnalyze, tags)
+      updateNodeData(id, { tags: newTags })
+    } catch {
+      const fallback = suggestTags(textToAnalyze, tags)
+      if (fallback.length > 0) {
+        updateNodeData(id, { tags: [...new Set([...tags, ...fallback])] })
+      }
+    }
+    setAiTagging(false)
+  }, [id, description, properties, tags, updateNodeData])
 
   const addTag = useCallback((t) => {
     if (!t || tags.includes(t)) return
@@ -283,6 +301,19 @@ const EntityNode = ({ id, data, style, selected }) => {
               onBlur={() => setTimeout(() => setTagSuggestOpen(false), 150)}
               onClick={e => e.stopPropagation()}
             />
+            {/* Auto-tag */}
+            <button
+              className="icon-btn"
+              onClick={(e) => { e.stopPropagation(); handleAutoTag() }}
+              disabled={aiTagging || !description.trim()}
+              title="Auto-tag from description"
+              style={{ width: 22, height: 22, borderRadius: 4, flexShrink: 0 }}
+            >
+              {aiTagging
+                ? <Loader size={9} className="animate-spin" />
+                : <Sparkles size={9} style={{ color: 'var(--accent)' }} />
+              }
+            </button>
             <button
               className="icon-btn"
               style={{ width: 22, height: 22, borderRadius: 4, flexShrink: 0 }}

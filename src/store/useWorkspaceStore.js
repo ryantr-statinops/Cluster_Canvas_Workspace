@@ -10,6 +10,7 @@ import {
   performUndo,
   performRedo,
 } from '../utils/history'
+import { applyAutoLayout, applyLayoutToSelection } from '../utils/autoLayout'
 
 const useWorkspaceStore = create((set, get) => ({
   // ── Undo/Redo State ──────────────────────────────────────────────────────────
@@ -385,6 +386,72 @@ const useWorkspaceStore = create((set, get) => ({
   openModal: (modal) => set({ activeModal: modal }),
   closeModal: () => set({ activeModal: null }),
   setNodes: (nodes) => set({ nodes }),
+
+  // ── Batch Operations ─────────────────────────────────────────────────────────
+  /**
+   * Update data for multiple nodes at once (batch edit).
+   * e.g., batchUpdateNodes(['id1', 'id2'], { status: 'active' })
+   */
+  batchUpdateNodes: (nodeIds, dataPatch) => {
+    get().pushSnapshot()
+    set((state) => ({
+      nodes: state.nodes.map(n =>
+        nodeIds.includes(n.id)
+          ? { ...n, data: { ...n.data, ...dataPatch } }
+          : n
+      ),
+    }))
+  },
+
+  /**
+   * Update style for multiple nodes at once (batch style).
+   */
+  batchUpdateNodeStyle: (nodeIds, stylePatch) => {
+    get().pushSnapshot()
+    set((state) => ({
+      nodes: state.nodes.map(n =>
+        nodeIds.includes(n.id)
+          ? { ...n, style: { ...n.style, ...stylePatch } }
+          : n
+      ),
+    }))
+  },
+
+  /**
+   * Remove multiple nodes at once.
+   */
+  batchRemoveNodes: (nodeIds) => {
+    get().pushSnapshot()
+    const idSet = new Set(nodeIds)
+    set((state) => ({
+      nodes: state.nodes.filter(n => !idSet.has(n.id) && !idSet.has(n.parentNode)),
+      edges: state.edges.filter(e => !idSet.has(e.source) && !idSet.has(e.target)),
+      selectedNodeId: idSet.has(state.selectedNodeId) ? null : state.selectedNodeId,
+      propertiesPanelOpen: idSet.has(state.selectedNodeId) ? false : state.propertiesPanelOpen,
+    }))
+  },
+
+  /**
+   * Apply auto-layout to all nodes.
+   */
+  applyLayout: (direction = 'TB') => {
+    const { nodes, edges } = get()
+    get().pushSnapshot()
+    const updated = applyAutoLayout(nodes, edges, direction)
+    set({ nodes: updated })
+  },
+
+  /**
+   * Apply auto-layout only to selected nodes.
+   */
+  applyLayoutToSelected: (direction = 'TB') => {
+    const { nodes, edges } = get()
+    const selectedIds = nodes.filter(n => n.selected).map(n => n.id)
+    if (selectedIds.length === 0) return
+    get().pushSnapshot()
+    const updated = applyLayoutToSelection(nodes, edges, selectedIds, direction)
+    set({ nodes: updated })
+  },
 }))
 
 export default useWorkspaceStore

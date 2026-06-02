@@ -2,11 +2,12 @@ import React, { useState, useCallback, useRef } from 'react'
 import {
   Bold, Italic, Code, Link, List, Quote,
   Heading2, Heading3, Copy, Check, ExternalLink,
-  Plus, X, Link as LinkIcon,
+  Plus, X, Link as LinkIcon, Sparkles, Loader, Bot,
 } from 'lucide-react'
 import BaseNode from '../canvas/BaseNode'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 import { nanoid } from 'nanoid'
+import { summarize, smartSummarize, aiComplete, hasApiKey } from '../../utils/ai'
 
 // ── Toolbar actions: insert markdown syntax at cursor ─────────────────
 const TOOLBAR_ACTIONS = [
@@ -28,6 +29,55 @@ const ContextNode = ({ id, data, style, selected }) => {
 
   const content    = data?.content || ''
   const references = data?.references || []
+
+  // ── AI Actions ───────────────────────────────────────────────────────
+  const [aiLoading, setAiLoading] = useState(null) // 'summarize' | 'complete' | null
+  const [aiPromptOpen, setAiPromptOpen] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+
+  const handleSummarize = useCallback(async () => {
+    setAiLoading('summarize')
+    try {
+      const summary = await smartSummarize(content)
+      // Replace previous AI summary if exists, otherwise append
+      const summaryBlock = `> **AI Summary:** ${summary}`
+      const prevMatch = content.match(/\n?> \*\*AI Summary:\*\*[\s\S]*?(?=\n\n|$)/)
+      if (prevMatch) {
+        updateNodeData(id, { content: content.replace(prevMatch[0], summaryBlock) })
+      } else {
+        updateNodeData(id, { content: `${content}\n\n${summaryBlock}` })
+      }
+    } catch (err) {
+      const fallback = summarize(content, 3).join(' ')
+      if (fallback) {
+        const summaryBlock = `> **Summary:** ${fallback}`
+        const prevMatch = content.match(/\n?> \*\*Summary:\*\*[\s\S]*?(?=\n\n|$)/)
+        if (prevMatch) {
+          updateNodeData(id, { content: content.replace(prevMatch[0], summaryBlock) })
+        } else {
+          updateNodeData(id, { content: `${content}\n\n${summaryBlock}` })
+        }
+      }
+    }
+    setAiLoading(null)
+  }, [id, content, updateNodeData])
+
+  const handleComplete = useCallback(async () => {
+    if (!aiPrompt.trim()) return
+    setAiLoading('complete')
+    setAiPromptOpen(false)
+    try {
+      const systemMsg = 'You are a helpful writing assistant. Continue the following text naturally and coherently.'
+      const userMsg = `Continue writing the following text:\n\n${content}\n\n---\nContinue with: ${aiPrompt}`
+      const completion = await aiComplete(systemMsg, userMsg)
+      updateNodeData(id, { content: `${content}\n\n${completion}` })
+    } catch (err) {
+      // Fallback: just append the prompt
+      updateNodeData(id, { content: `${content}\n\n${aiPrompt}` })
+    }
+    setAiPrompt('')
+    setAiLoading(null)
+  }, [id, content, aiPrompt, updateNodeData])
 
   // ── Content update ──────────────────────────────────────────────────
   const handleContentChange = useCallback((e) => {
@@ -124,6 +174,64 @@ const ContextNode = ({ id, data, style, selected }) => {
               </button>
             )
           })}
+          {/* AI Summarize */}
+          <button
+            className="icon-btn"
+            onClick={(e) => { e.stopPropagation(); handleSummarize() }}
+            disabled={aiLoading === 'summarize' || !content.trim()}
+            title="Summarize content"
+            style={{ width: 24, height: 24, borderRadius: 4 }}
+          >
+            {aiLoading === 'summarize'
+              ? <Loader size={11} className="animate-spin" />
+              : <Sparkles size={11} style={{ color: hasApiKey() ? 'var(--accent)' : 'var(--text-muted)' }} />
+            }
+          </button>
+
+          {/* AI Complete */}
+          <div style={{ position: 'relative' }}>
+            <button
+              className="icon-btn"
+              onClick={(e) => { e.stopPropagation(); setAiPromptOpen(s => !s) }}
+              disabled={aiLoading === 'complete' || !content.trim() || !hasApiKey()}
+              title="AI Continue writing"
+              style={{ width: 24, height: 24, borderRadius: 4 }}
+            >
+              {aiLoading === 'complete'
+                ? <Loader size={11} className="animate-spin" />
+                : <Bot size={11} style={{ color: hasApiKey() ? 'var(--accent)' : 'var(--text-muted)' }} />
+              }
+            </button>
+            {aiPromptOpen && (
+              <div style={{
+                position: 'absolute', top: '100%', right: 0, marginTop: 4,
+                background: 'var(--bg-surface)', border: '1px solid var(--bg-border)',
+                borderRadius: 8, padding: 6, zIndex: 10,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                display: 'flex', gap: 4, minWidth: 200,
+              }}>
+                <input
+                  className="field-input"
+                  style={{ flex: 1, height: 26, fontSize: 10, padding: '0 6px' }}
+                  placeholder="e.g. explain the code above..."
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleComplete() } }}
+                  onClick={e => e.stopPropagation()}
+                  autoFocus
+                />
+                <button
+                  className="icon-btn"
+                  style={{ width: 26, height: 26, borderRadius: 5 }}
+                  onClick={(e) => { e.stopPropagation(); handleComplete() }}
+                  disabled={!aiPrompt.trim()}
+                >
+                  <Sparkles size={11} />
+                </button>
+              </div>
+            )}
+          </div>
+
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
             {wordCount}w · {charCount}c

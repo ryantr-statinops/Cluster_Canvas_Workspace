@@ -6,6 +6,7 @@ import Sidebar         from './components/layout/Sidebar'
 import PropertiesPanel from './components/layout/PropertiesPanel'
 import EdgePropertiesPanel from './components/edges/EdgePropertiesPanel'
 import CanvasContainer from './features/canvas/CanvasContainer'
+import SearchModal     from './components/ui/SearchModal'
 import ThemeModal      from './components/ui/ThemeModal'
 import ShortcutModal   from './components/ui/ShortcutModal'
 import SettingsModal   from './components/ui/SettingsModal'
@@ -72,6 +73,9 @@ function App() {
     } else if (ctrl && e.key === '0') {
       e.preventDefault()
       // Fit view is handled inside CanvasContainer
+    } else if (ctrl && e.key === 'k') {
+      e.preventDefault()
+      openModal('search')
     } else if (ctrl && e.key === 'z') {
       e.preventDefault()
       const state = useWorkspaceStore.getState()
@@ -138,6 +142,7 @@ function App() {
 
       {/* ── Modal Layer ── */}
       <AnimatePresence>
+        {activeModal === 'search'    && <SearchModal   key="search"    />}
         {activeModal === 'theme'     && <ThemeModal    key="theme"     />}
         {activeModal === 'shortcuts' && <ShortcutModal key="shortcuts" />}
         {activeModal === 'settings'  && <SettingsModal key="settings"  />}
