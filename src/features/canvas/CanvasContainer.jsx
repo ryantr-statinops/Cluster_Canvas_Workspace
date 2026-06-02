@@ -1,15 +1,13 @@
-import React, { useCallback, useMemo, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import ReactFlow, {
-  Controls,
   Background,
   BackgroundVariant,
   MiniMap,
   useReactFlow,
-  ReactFlowProvider,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutGrid, Compass, Maximize, Minimize } from 'lucide-react'
+import { LayoutGrid } from 'lucide-react'
 
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 import { getNodeTypes, getDefaultSize, initRegistry, setNodeComponent } from '../../features/nodes/registry/nodeRegistry'
@@ -82,6 +80,47 @@ const CanvasInner = () => {
 
   const { fitView, zoomIn, zoomOut } = useReactFlow()
   const wrapperRef = useRef(null)    // Map our store nodes to React Flow format
+
+  const [isMoving, setIsMoving] = useState(false)
+  const [isHoveringMiniMap, setIsHoveringMiniMap] = useState(false)
+  const moveTimeoutRef = useRef(null)
+
+  const handleMoveStart = useCallback(() => {
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current)
+      moveTimeoutRef.current = null
+    }
+    setIsMoving(true)
+  }, [])
+
+  const handleMove = useCallback((event, viewport) => {
+    setIsMoving(true)
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current)
+      moveTimeoutRef.current = null
+    }
+    if (viewport) {
+      useWorkspaceStore.setState({ zoom: viewport.zoom })
+    }
+  }, [])
+
+  const handleMoveEnd = useCallback(() => {
+    if (moveTimeoutRef.current) {
+      clearTimeout(moveTimeoutRef.current)
+    }
+    moveTimeoutRef.current = setTimeout(() => {
+      setIsMoving(false)
+      moveTimeoutRef.current = null
+    }, 1000)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (moveTimeoutRef.current) {
+        clearTimeout(moveTimeoutRef.current)
+      }
+    }
+  }, [])
   const rfNodes = useMemo(() => nodes.map(node => ({
     id:       node.id,
     type:     node.type,
@@ -111,9 +150,12 @@ const CanvasInner = () => {
     fitView({ padding: 0.15, duration: 500 })
   }, [fitView])
 
-  const handleInit = useCallback(() => {
+  const handleInit = useCallback((instance) => {
     // Delay fitView so nodes are fully rendered
     setTimeout(() => fitView({ padding: 0.12, duration: 600 }), 100)
+    if (instance) {
+      useWorkspaceStore.setState({ zoom: instance.getZoom() })
+    }
   }, [fitView])
 
   return (
@@ -140,6 +182,9 @@ const CanvasInner = () => {
           selectEdge(edge.id)
         }}
         onPaneClick={handlePaneClick}
+        onMoveStart={handleMoveStart}
+        onMove={handleMove}
+        onMoveEnd={handleMoveEnd}
         fitView={false}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         onInit={handleInit}
@@ -165,23 +210,35 @@ const CanvasInner = () => {
           style={{ opacity: 0.4 }}
         />
 
-        {/* Controls (custom positioned) */}
-        <Controls
-          showInteractive={false}
-          position="bottom-right"
-          style={{ bottom: 24, right: 24 }}
-        />
-
         {/* Minimap */}
-        <MiniMap
-          position="bottom-left"
-          style={{ bottom: 24, left: 176 }}
-          nodeColor="var(--bg-elevated)"
-          maskColor="rgba(0,0,0,0.4)"
-          nodeStrokeColor="var(--bg-border)"
-          pannable
-          zoomable
-        />
+        <AnimatePresence>
+          {(isMoving || isHoveringMiniMap) && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              onMouseEnter={() => setIsHoveringMiniMap(true)}
+              onMouseLeave={() => setIsHoveringMiniMap(false)}
+              style={{
+                position: 'absolute',
+                bottom: 24,
+                left: 176,
+                zIndex: 10,
+              }}
+            >
+              <MiniMap
+                position="bottom-left"
+                style={{ margin: 0, position: 'relative', bottom: 'auto', left: 'auto' }}
+                nodeColor="var(--bg-elevated)"
+                maskColor="rgba(0,0,0,0.4)"
+                nodeStrokeColor="var(--bg-border)"
+                pannable
+                zoomable
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </ReactFlow>
 
       {/* Grid mode overlay badge */}
@@ -216,80 +273,14 @@ const CanvasInner = () => {
         )}
       </AnimatePresence>
 
-      {/* Controls Container */}
-      <div style={{
-        position: 'absolute', bottom: 24, right: 100,
-        display: 'flex', gap: 8, zIndex: 10
-      }}>
-        {/* Fullscreen Toggle */}
-        <button
-          onClick={toggleFullScreen}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8,
-            padding: '6px 10px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer',
-          }}
-          title="Toggle Fullscreen"
-        >
-          {isFullScreen ? <Minimize size={12} /> : <Maximize size={12} />}
-          {isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
-        </button>
-
-        {/* Zoom out button */}
-        <button
-          onClick={zoomOut}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8,
-            padding: '6px 10px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer',
-          }}
-          title="Zoom out"
-        >
-          −
-          <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1 }}>Zoom</span>
-        </button>
-
-        {/* Zoom in button */}
-        <button
-          onClick={zoomIn}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8,
-            padding: '6px 10px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer',
-          }}
-          title="Zoom in"
-        >
-          +
-          <span style={{ fontSize: 12, fontWeight: 800, lineHeight: 1 }}>Zoom</span>
-        </button>
-
-        {/* Fit view button */}
-        <button
-          onClick={handleFitView}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 5,
-            background: 'var(--bg-surface)', border: '1px solid var(--bg-border)', borderRadius: 8,
-            padding: '6px 10px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer',
-          }}
-          title="Fit view (Ctrl+0)"
-        >
-          <Compass size={12} />
-          Fit
-        </button>
-      </div>
-
-
       {/* Grid Overlay inside Provider */}
       <GridOverlay />
     </div>
   )
 }
 
-// Wrap with provider required by useReactFlow hook
 const CanvasContainer = () => (
-  <ReactFlowProvider>
-    <CanvasInner />
-  </ReactFlowProvider>
+  <CanvasInner />
 )
 
 export default CanvasContainer

@@ -5,7 +5,7 @@ import {
   Image, Video, Gauge, Timer, Pencil, Layers,
   ChevronDown, ChevronRight, FolderOpen, Star,
   History, Keyboard, Palette, LayoutGrid, Plus,
-  PanelLeft, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
+  FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
   Columns,
 } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
@@ -184,26 +184,6 @@ const Sidebar = () => {
           </motion.aside>
         )}
       </AnimatePresence>
-
-      {/* Collapse toggle button */}
-      <button
-        onClick={toggleSidebar}
-        className="icon-btn"
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: sidebarOpen ? 204 : 8,
-          transform: 'translateY(-50%)',
-          zIndex: 30,
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--bg-border)',
-          borderRadius: 8,
-          transition: 'left 0.22s',
-        }}
-        title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-      >
-        <PanelLeft size={14} />
-      </button>
     </>
   )
 }

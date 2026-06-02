@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   LayoutDashboard, Search, Plus, LayoutGrid, Workflow,
@@ -6,8 +6,9 @@ import {
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Square, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
   ArrowUp, Undo2, Redo2, Shuffle, Trash2, Tag,
-  Columns,
+  Columns, PanelLeft,
 } from 'lucide-react'
+import { useReactFlow } from 'reactflow'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 
 // ── Layout directions ─────────────────────────────────────────────────
@@ -77,8 +78,36 @@ const Navbar = () => {
     viewMode, setViewMode, openModal, addNode, nodes, edges,
     workspaces, activeWorkspaceId, createWorkspace, switchWorkspace,
     selectNode, undo, redo, undoStack, redoStack,
-    applyLayout, applyLayoutToSelected, batchUpdateNodes, batchRemoveNodes
+    applyLayout, applyLayoutToSelected, batchUpdateNodes, batchRemoveNodes,
+    sidebarOpen, toggleSidebar, zoom
   } = useWorkspaceStore()
+
+  const { zoomTo } = useReactFlow()
+  const [zoomMenuOpen, setZoomMenuOpen] = useState(false)
+  const [isEditingZoom, setIsEditingZoom] = useState(false)
+  const [zoomInputValue, setZoomInputValue] = useState('')
+
+  const handleZoomInputSubmit = useCallback(() => {
+    let val = parseFloat(zoomInputValue)
+    if (!isNaN(val)) {
+      // Clamp zoom between 10% (0.1) and 250% (2.5) matching reactflow boundaries
+      val = Math.max(10, Math.min(250, val))
+      zoomTo(val / 100, { duration: 300 })
+    }
+    setIsEditingZoom(false)
+  }, [zoomInputValue, zoomTo])
+
+  useEffect(() => {
+    if (!zoomMenuOpen) return
+    const handleOutsideClick = (e) => {
+      const container = document.getElementById('zoom-dropdown-container')
+      if (container && !container.contains(e.target)) {
+        setZoomMenuOpen(false)
+      }
+    }
+    document.addEventListener('click', handleOutsideClick)
+    return () => document.removeEventListener('click', handleOutsideClick)
+  }, [zoomMenuOpen])
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const [addMenuOpen, setAddMenuOpen] = useState(false)
@@ -152,8 +181,21 @@ const Navbar = () => {
     }}>
       {/* ── Left: Logo & Workspace Switcher ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Toggle Sidebar Button */}
+        <button
+          onClick={toggleSidebar}
+          className="icon-btn"
+          style={{
+            color: sidebarOpen ? 'var(--accent)' : 'var(--text-secondary)',
+            background: sidebarOpen ? 'var(--bg-elevated)' : 'transparent',
+          }}
+          title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        >
+          <PanelLeft size={16} />
+        </button>
+
+        {/* Logo and Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             width: 32,
             height: 32,
@@ -166,9 +208,99 @@ const Navbar = () => {
           }}>
             <LayoutDashboard size={16} color="#1e222a" />
           </div>
-          <h1 style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>
-            Cluster Canvas
-          </h1>
+
+          {/* Zoom Percentage Dropdown or Input */}
+          <div id="zoom-dropdown-container" style={{ position: 'relative' }}>
+            {isEditingZoom ? (
+              <input
+                type="text"
+                value={zoomInputValue}
+                onChange={e => setZoomInputValue(e.target.value)}
+                onBlur={handleZoomInputSubmit}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleZoomInputSubmit()
+                  if (e.key === 'Escape') setIsEditingZoom(false)
+                }}
+                autoFocus
+                onFocus={e => e.target.select()}
+                style={{
+                  width: 70,
+                  height: 27,
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--accent)',
+                  borderRadius: 8,
+                  color: 'var(--text-primary)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  outline: 'none',
+                  boxShadow: '0 0 0 2px var(--accent-glow)',
+                }}
+              />
+            ) : (
+              <button 
+                onClick={() => setZoomMenuOpen(s => !s)}
+                onDoubleClick={(e) => {
+                  e.stopPropagation()
+                  setZoomMenuOpen(false)
+                  setZoomInputValue(Math.round((zoom || 1) * 100).toString())
+                  setIsEditingZoom(true)
+                }}
+                style={{ 
+                  display: 'flex', alignItems: 'center', gap: 6, 
+                  background: 'var(--bg-elevated)', border: '1px solid var(--bg-border)', cursor: 'pointer',
+                  padding: '6px 12px', borderRadius: 8, transition: 'border-color 0.15s',
+                  color: 'var(--text-primary)', fontSize: 12, fontWeight: 600,
+                  minWidth: 70, justifyContent: 'center'
+                }}
+                onMouseOver={e => e.currentTarget.style.borderColor = 'var(--text-muted)'}
+                onMouseOut={e => e.currentTarget.style.borderColor = 'var(--bg-border)'}
+                title="Double click to edit zoom percentage"
+              >
+                <span>{Math.round((zoom || 1) * 100)}%</span>
+                <ChevronDown size={12} style={{ color: 'var(--text-muted)' }} />
+              </button>
+            )}
+            
+            {!isEditingZoom && zoomMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.15 }}
+                style={{
+                  position: 'absolute', top: 'calc(100% + 8px)', left: 0,
+                  background: 'var(--bg-surface)', border: '1px solid var(--bg-border)',
+                  borderRadius: 10, padding: 6, zIndex: 99, minWidth: 90,
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.4)',
+                  display: 'flex', flexDirection: 'column', gap: 2,
+                }}
+              >
+                {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((zoomVal) => {
+                  const percentageStr = `${Math.round(zoomVal * 100)}%`
+                  const isCurrent = Math.abs((zoom || 1) - zoomVal) < 0.05
+                  return (
+                    <button
+                      key={zoomVal}
+                      onClick={() => {
+                        zoomTo(zoomVal, { duration: 300 })
+                        setZoomMenuOpen(false)
+                      }}
+                      style={{
+                        textAlign: 'center', padding: '6px 8px', borderRadius: 6,
+                        background: isCurrent ? 'var(--bg-elevated)' : 'transparent',
+                        border: 'none', color: isCurrent ? 'var(--text-primary)' : 'var(--text-secondary)',
+                        fontSize: 12, cursor: 'pointer', transition: 'background 0.1s', fontWeight: isCurrent ? 600 : 500
+                      }}
+                      onMouseOver={e => { if (!isCurrent) e.currentTarget.style.background = 'var(--bg-elevated)' }}
+                      onMouseOut={e => { if (!isCurrent) e.currentTarget.style.background = 'transparent' }}
+                    >
+                      {percentageStr}
+                    </button>
+                  )
+                })}
+              </motion.div>
+            )}
+          </div>
         </div>
 
         <div style={{ width: 1, height: 24, background: 'var(--bg-border)' }} />

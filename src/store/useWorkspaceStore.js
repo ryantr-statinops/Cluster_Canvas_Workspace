@@ -26,6 +26,7 @@ const useWorkspaceStore = create((set, get) => ({
   
   selectedNodeId: null, // Primary selection for Properties
   sidebarOpen: true,
+  zoom: 1,
   propertiesPanelOpen: false,
   activeModal: null,
 

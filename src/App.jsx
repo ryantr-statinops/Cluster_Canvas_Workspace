@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback } from 'react'
 import { AnimatePresence } from 'framer-motion'
+import { ReactFlowProvider } from 'reactflow'
 
 import Navbar          from './components/layout/Navbar'
 import Sidebar         from './components/layout/Sidebar'
@@ -105,7 +106,8 @@ function App() {
   const isEmpty = nodes.length === 0
 
   return (
-    <div style={{
+    <ReactFlowProvider>
+      <div style={{
       display: 'flex',
       flexDirection: 'column',
       width: '100%',
@@ -147,7 +149,8 @@ function App() {
         {activeModal === 'shortcuts' && <ShortcutModal key="shortcuts" />}
         {activeModal === 'settings'  && <SettingsModal key="settings"  />}
       </AnimatePresence>
-    </div>
+      </div>
+    </ReactFlowProvider>
   )
 }
 
