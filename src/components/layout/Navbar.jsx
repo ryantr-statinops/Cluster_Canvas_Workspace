@@ -6,6 +6,7 @@ import {
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Square, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
   ArrowUp, Undo2, Redo2, Shuffle, Trash2, Tag,
+  Columns,
 } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 
@@ -16,6 +17,7 @@ const LAYOUT_DIRECTIONS = [
 ]
 
 const NODE_QUICK_ADD = [
+  { type: 'data-table',label: 'Table',    icon: Columns },
   { type: 'relation',  label: 'Relation',  icon: GitBranch },
   { type: 'entity',    label: 'Entity',    icon: FileText },
   { type: 'context',   label: 'Context',   icon: BookOpen },
@@ -31,7 +33,7 @@ const NODE_TYPE_ICONS = {
   entity: FileText, context: BookOpen, notes: StickyNote,
   todo: CheckSquare, website: Globe, draw: Pencil,
   group: Layers, collection: FilterIcon, portal: Compass,
-  relation: GitBranch,
+  relation: GitBranch, 'data-table': Columns,
 }
 
 const SearchResultRow = ({ node, onClick, compact }) => {

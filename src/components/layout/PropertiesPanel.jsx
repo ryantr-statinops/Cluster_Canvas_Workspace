@@ -5,7 +5,7 @@ import {
   Copy, Trash2, ChevronUp, ChevronDown,
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Square, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
-
+  Columns,
 } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 import { getDefaultSize } from '../../features/nodes/registry/nodeRegistry'
@@ -28,6 +28,7 @@ const TYPE_ICONS = {
   collection: FilterIcon,
   portal:    Compass,
   relation:  GitBranch,
+  'data-table': Columns,
 }
 
 const Row = ({ label, children }) => (

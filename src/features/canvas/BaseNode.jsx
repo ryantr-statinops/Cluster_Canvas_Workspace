@@ -5,7 +5,8 @@ import {
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Layers,
   Lock, Unlock, X, Maximize2, Grip, Settings2,
-  FileText, BookOpen, Filter, Compass, GitBranch
+  FileText, BookOpen, Filter, Compass, GitBranch,
+  Columns
 } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 
@@ -23,9 +24,10 @@ const TYPE_ICONS = {
   group:     Layers,
   entity:    FileText,
   context:   BookOpen,
-  collection: Filter,
-  portal:    Compass,
-  relation:  GitBranch,
+  collection:  Filter,
+  portal:      Compass,
+  relation:    GitBranch,
+  'data-table': Columns,
 }
 
 export const TYPE_LABELS = {
@@ -45,6 +47,7 @@ export const TYPE_LABELS = {
   collection: 'COLLECTION',
   portal:    'PORTAL',
   relation:  'RELATION',
+  'data-table': 'TABLE',
 }
 
 const BaseNode = ({ id, type, data, style, selected, children, headerControls, noPadding }) => {

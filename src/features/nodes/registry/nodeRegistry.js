@@ -126,7 +126,8 @@ export function initRegistry() {
     { type: 'context', component: null, defaultSize: { width: 400, height: 340 }, defaultData: { title: 'New Context', content: '', references: [] }, capabilities: ['editable', 'resizable'] },
     { type: 'collection', component: null, defaultSize: { width: 360, height: 340 }, defaultData: { title: 'New Collection', filters: [], matchMode: 'all' }, capabilities: ['editable', 'resizable'] },
     { type: 'portal', component: null, defaultSize: { width: 340, height: 320 }, defaultData: { title: 'New Portal', links: [] }, capabilities: ['editable', 'resizable'] },
-    { type: 'relation', component: null, defaultSize: { width: 340, height: 320 }, defaultData: { title: 'New Relation', targetId: '' }, capabilities: ['editable', 'resizable'] },
+    { type: 'relation',  component: null, defaultSize: { width: 340, height: 320 }, defaultData: { title: 'New Relation', targetId: '' }, capabilities: ['editable', 'resizable'] },
+    { type: 'data-table', component: null, defaultSize: { width: 480, height: 360 }, defaultData: { title: 'Data Table', columns: [{ id: 'col1', name: 'Name', type: 'text', width: 140 }, { id: 'col2', name: 'Status', type: 'select', width: 110, options: ['Active', 'Inactive', 'Pending'] }, { id: 'col3', name: 'Value', type: 'number', width: 90 }], rows: [{ id: 'row1', cells: { col1: 'Item A', col2: 'Active', col3: '42' } }, { id: 'row2', cells: { col1: 'Item B', col2: 'Inactive', col3: '17' } }], references: [] }, capabilities: ['editable', 'resizable'] },
   ]
 
   builtInDefs.forEach(def => {

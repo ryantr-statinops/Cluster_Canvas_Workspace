@@ -30,7 +30,8 @@ import EntityNode   from '../nodes/EntityNode'
 import ContextNode  from '../nodes/ContextNode'
 import CollectionNode from '../nodes/CollectionNode'
 import PortalNode     from '../nodes/PortalNode'
-import RelationNode   from '../nodes/RelationNode'
+import RelationNode     from '../nodes/RelationNode'
+import DataTableNode    from '../nodes/DataTableNode'
 
 // Init registry with components on first import
 initRegistry()
@@ -44,6 +45,7 @@ setNodeComponent('context',    ContextNode)
 setNodeComponent('collection', CollectionNode)
 setNodeComponent('portal',     PortalNode)
 setNodeComponent('relation',   RelationNode)
+setNodeComponent('data-table', DataTableNode)
 
 // Get node types from registry
 const NODE_TYPES = getNodeTypes()

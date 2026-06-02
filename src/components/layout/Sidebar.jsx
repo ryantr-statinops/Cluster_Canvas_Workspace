@@ -6,10 +6,12 @@ import {
   ChevronDown, ChevronRight, FolderOpen, Star,
   History, Keyboard, Palette, LayoutGrid, Plus,
   PanelLeft, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
+  Columns,
 } from 'lucide-react'
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 
 const NODE_CATEGORIES = [
+  { type: 'data-table',label: 'Data Table',icon: Columns },
   { type: 'relation',  label: 'Relation',  icon: GitBranch },
   { type: 'entity',    label: 'Entity',    icon: FileText },
   { type: 'context',   label: 'Context',   icon: BookOpen },
