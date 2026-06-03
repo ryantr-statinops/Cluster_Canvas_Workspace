@@ -4,18 +4,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── CSS Custom Property Defaults (Nordic Dark) ───────────────────────────── */
+/* ── CSS Custom Property Defaults (Light Minimal) ──────────────────────────── */
 :root {
-  --bg-canvas:        #0b0d0f;
-  --bg-surface:       #13161a;
-  --bg-elevated:      #1e2229;
-  --bg-border:        #2d333b;
-  --text-primary:     #f8fafc;
-  --text-secondary:   #94a3b8;
-  --text-muted:       #475569;
-  --accent:           #60a5fa;
-  --accent-glow:      rgba(96,165,250,0.15);
-  --accent-secondary: #3b82f6;
+  --bg-canvas:        #f0f2f5;
+  --bg-surface:       #ffffff;
+  --bg-elevated:      #f8f9fa;
+  --bg-border:        #dee2e6;
+  --text-primary:     #212529;
+  --text-secondary:   #495057;
+  --text-muted:       #adb5bd;
+  --accent:           #4361ee;
+  --accent-glow:      rgba(67,97,238,0.2);
+  --accent-secondary: #7209b7;
 }
 
 /* ── Base ─────────────────────────────────────────────────────────────────── */
@@ -55,17 +55,17 @@
 
   /* Glass panel */
   .glass {
-    background: rgba(46, 52, 64, 0.72);
+    background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
     backdrop-filter: blur(16px) saturate(1.4);
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border: 1px solid rgba(255,255,255,0.07);
+    border: 1px solid var(--bg-border);
   }
 
   .glass-light {
-    background: rgba(59, 66, 82, 0.55);
+    background: color-mix(in srgb, var(--bg-surface) 80%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--bg-border);
   }
 
   /* Node base wrapper */
@@ -83,7 +83,7 @@
   }
 
   .node-window:hover {
-    border-color: rgba(255,255,255,0.12);
+    border-color: color-mix(in srgb, var(--accent) 25%, transparent);
   }
 
   .node-window.selected {

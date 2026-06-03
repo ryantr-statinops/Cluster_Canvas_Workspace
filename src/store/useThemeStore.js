@@ -103,7 +103,7 @@ const applyTheme = (themeId) => {
 }
 
 const useThemeStore = create((set) => ({
-  activeTheme: 'nordic-dark',
+  activeTheme: 'light-minimal',
   themes,
 
   setTheme: (themeId) => {
@@ -112,7 +112,7 @@ const useThemeStore = create((set) => ({
   },
 
   init: () => {
-    applyTheme('nordic-dark')
+    applyTheme('light-minimal')
   },
 }))
 
