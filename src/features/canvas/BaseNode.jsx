@@ -234,3 +234,14 @@ const BaseNode = ({ id, type, data, style, selected, children, headerControls, n
 }
 
 export default React.memo(BaseNode)
+
+// Thêm CSS tại đây nếu không có file CSS riêng
+<style>{`
+  .resize-handle:hover {
+    transform: scale(1.1);
+    opacity: 1 !important;
+  }
+  .node-window {
+    transition: width 0.2s ease, height 0.2s ease;
+  }
+`}</style>
