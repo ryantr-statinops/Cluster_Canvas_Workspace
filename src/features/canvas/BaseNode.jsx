@@ -113,17 +113,29 @@ const BaseNode = ({ id, type, data, style, selected, children, headerControls, n
         isVisible={selected && !isLocked}
         minWidth={200}
         minHeight={150}
-        lineStyle={{ opacity: 0, pointerEvents: 'none' }}
-        handleStyle={{ width: 8, height: 8, background: 'var(--accent)', border: 'none', borderRadius: 2 }}
+        lineStyle={{ 
+          opacity: selected ? 0.4 : 0, 
+          pointerEvents: 'none',
+          borderColor: 'var(--accent)',
+          borderWidth: 2,
+        }}
+        handleStyle={{ 
+          width: 12, 
+          height: 12, 
+          background: 'var(--accent)', 
+          border: '2px solid var(--bg-surface)', 
+          borderRadius: '50%'
+        }}
+        handleClassName="resize-handle"
         resizeHandlePositions={['top', 'right', 'bottom', 'left']}
         resizeHandleStyles={{
-          top: { cursor: 'ns-resize', height: 4, top: -2 },
-          right: { cursor: 'ew-resize', width: 4, right: -2 },
-          bottom: { cursor: 'ns-resize', height: 4, bottom: -2 },
-          left: { cursor: 'ew-resize', width: 4, left: -2 }
+          top: { cursor: 'ns-resize', width: '100%', height: 8, top: -2 },
+          right: { cursor: 'ew-resize', width: 8, height: '100%', right: -2 },
+          bottom: { cursor: 'ns-resize', width: '100%', height: 8, bottom: -2 },
+          left: { cursor: 'ew-resize', width: 8, height: '100%', left: -2 }
         }}
         onResize={(e, params) => {
-           updateNodeStyle(id, { width: params.width, height: params.height })
+          updateNodeStyle(id, { width: params.width, height: params.height })
         }}
       />
       
