@@ -293,11 +293,51 @@
    to be on the same element as our `.node-window` wrapper. */
 
 
-/* Hide handles (we're using a window model, not edge connections) */
-/* Allow React Flow NodeResizer handles to work.
-   We only hide edge connection handles by narrowing selector if needed. */
+/* Hide connection handles (we're using a window model, not edge connections) */
 .react-flow__handle {
-  /* keep default handle visibility */
+  display: none !important;
+}
+
+/* ── Custom Resize Handle Styles ───────────────────────────────────────────── */
+.react-flow__resize-control.corner-handle {
+  width: 10px !important;
+  height: 10px !important;
+  background: var(--accent) !important;
+  border: 1.5px solid var(--bg-canvas) !important;
+  border-radius: 3px !important;
+  z-index: 30 !important;
+}
+
+.react-flow__resize-control.edge-handle {
+  background: transparent !important;
+  opacity: 0.45 !important;
+  z-index: 20 !important;
+}
+
+.react-flow__resize-control.edge-handle.top,
+.react-flow__resize-control.edge-handle.bottom {
+  width: 100% !important;
+  height: 8px !important;
+  border: none !important;
+  border-top: 2px solid var(--accent) !important;
+}
+
+.react-flow__resize-control.edge-handle.bottom {
+  border-top: none !important;
+  border-bottom: 2px solid var(--accent) !important;
+}
+
+.react-flow__resize-control.edge-handle.left,
+.react-flow__resize-control.edge-handle.right {
+  width: 8px !important;
+  height: 100% !important;
+  border: none !important;
+  border-left: 2px solid var(--accent) !important;
+}
+
+.react-flow__resize-control.edge-handle.right {
+  border-left: none !important;
+  border-right: 2px solid var(--accent) !important;
 }
 
 

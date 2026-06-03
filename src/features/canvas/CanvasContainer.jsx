@@ -6,6 +6,7 @@ import ReactFlow, {
   useReactFlow,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
+import '@reactflow/node-resizer/dist/style.css'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LayoutGrid } from 'lucide-react'
 
