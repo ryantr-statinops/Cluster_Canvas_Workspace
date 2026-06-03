@@ -108,11 +108,11 @@ const BaseNode = ({ id, type, data, style, selected, children, headerControls, n
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       whileDrag={{ scale: 1.015 }}
     >
-      <NodeResizer 
-        color="var(--accent)" 
-        isVisible={selected && !isLocked} 
-        minWidth={200} 
-        minHeight={150} 
+      <NodeResizer
+        color="var(--accent)"
+        isVisible={selected && !isLocked}
+        minWidth={200}
+        minHeight={150}
         lineStyle={{ opacity: 0, pointerEvents: 'none' }}
         handleStyle={{ width: 8, height: 8, background: 'var(--accent)', border: 'none', borderRadius: 2 }}
         resizeHandlePositions={['top', 'right', 'bottom', 'left']}
