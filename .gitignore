@@ -39,3 +39,4 @@ playwright/.cache/
 #System Promts
 agents/
 
+.blackboxcli/
