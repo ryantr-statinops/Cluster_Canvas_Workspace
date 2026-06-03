@@ -22,7 +22,6 @@ export function captureSnapshot(state) {
     edges:          JSON.parse(JSON.stringify(state.edges || [])),
     workspaces:     JSON.parse(JSON.stringify(state.workspaces || [])),
     activeWorkspaceId: state.activeWorkspaceId,
-    viewMode:       state.viewMode,
   }
 }
 
@@ -90,7 +89,6 @@ export function serializeWorkspace(state) {
         edges: ws.edges || [],
       })),
       activeWorkspaceId: state.activeWorkspaceId,
-      viewMode:   state.viewMode,
     },
   }, null, 2)
 }

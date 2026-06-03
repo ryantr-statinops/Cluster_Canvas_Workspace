@@ -4,7 +4,7 @@ import {
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Layers,
   ChevronDown, ChevronRight, FolderOpen, Star,
-  History, Keyboard, Palette, LayoutGrid, Plus,
+  History, Keyboard, Palette, Plus,
   FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
   Columns,
 } from 'lucide-react'

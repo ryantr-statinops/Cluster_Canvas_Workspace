@@ -18,11 +18,10 @@ const useWorkspaceStore = create((set, get) => ({
   redoStack: [],
 
   // ── Core State ──────────────────────────────────────────────────────────────
-  workspaces: [{ id: 'default', name: 'Main Workspace', nodes: [], edges: [], gridPositions: {} }],
+  workspaces: [{ id: 'default', name: 'Main Workspace', nodes: [], edges: [] }],
   activeWorkspaceId: 'default',
   nodes: [],
   edges: [], // Active edges from React Flow
-  viewMode: 'flex',
   
   selectedNodeId: null, // Primary selection for Properties
   sidebarOpen: true,
@@ -68,7 +67,7 @@ const useWorkspaceStore = create((set, get) => ({
 
   // ── Workspace Switching ──────────────────────────────────────────────────────
   createWorkspace: () => {
-    const newWs = { id: nanoid(6), name: `Workspace ${get().workspaces.length + 1}`, nodes: [], edges: [], gridPositions: {} }
+    const newWs = { id: nanoid(6), name: `Workspace ${get().workspaces.length + 1}`, nodes: [], edges: [] }
     set(state => ({
       workspaces: [...state.workspaces.map(ws => ws.id === state.activeWorkspaceId ? { ...ws, nodes: state.nodes, edges: state.edges } : ws), newWs],
       activeWorkspaceId: newWs.id,
@@ -76,7 +75,6 @@ const useWorkspaceStore = create((set, get) => ({
       edges: [],
       selectedNodeId: null,
       propertiesPanelOpen: false,
-      viewMode: 'flex'
     }))
   },
 
@@ -94,7 +92,6 @@ const useWorkspaceStore = create((set, get) => ({
         edges: nextWs.edges || [],
         selectedNodeId: null,
         propertiesPanelOpen: false,
-        viewMode: 'flex'
       }
     })
   },
@@ -351,21 +348,6 @@ const useWorkspaceStore = create((set, get) => ({
     const node = get().nodes.find((n) => n.id === nodeId)
     if (!node) return
     get().updateNodeStyle(nodeId, { locked: !node.style?.locked })
-  },
-
-  // ── View Modes ───────────────────────────────────────────────────────────────
-  setViewMode: (mode) => {
-    const state = get()
-    const current = state.viewMode;
-    const nodes = state.nodes
-    const selectedNodes = nodes.filter(n => n.selected && n.type !== 'group')
-
-    if (mode === 'grid' && current === 'flex') {
-      if (selectedNodes.length === 0) return;
-      set({ viewMode: 'grid' })
-    } else if (mode === 'flex' && current === 'grid') {
-      set({ viewMode: 'flex' })
-    }
   },
 
   // ── UI State ─────────────────────────────────────────────────────────────────

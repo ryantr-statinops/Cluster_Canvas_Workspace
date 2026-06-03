@@ -8,11 +8,8 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import '@reactflow/node-resizer/dist/style.css'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutGrid } from 'lucide-react'
-
 import useWorkspaceStore from '../../store/useWorkspaceStore'
 import { getNodeTypes, getDefaultSize, initRegistry, setNodeComponent } from '../../features/nodes/registry/nodeRegistry'
-import GridOverlay from '../../components/ui/GridOverlay'
 import StyledEdge from '../edges/StyledEdge'
 
 // Custom edge types for React Flow
@@ -61,7 +58,6 @@ const CanvasInner = () => {
     clearSelection,
     clearEdgeSelection,
     setEdges,
-    viewMode,
     isFullScreen,
     toggleFullScreen
   } = useWorkspaceStore()
@@ -243,40 +239,7 @@ const CanvasInner = () => {
         </AnimatePresence>
       </ReactFlow>
 
-      {/* Grid mode overlay badge */}
-      <AnimatePresence>
-        {viewMode === 'grid' && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            style={{
-              position: 'absolute',
-              top: 16,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'var(--accent)',
-              color: '#1e222a',
-              padding: '4px 14px',
-              borderRadius: 99,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              zIndex: 100,
-            }}
-          >
-            <LayoutGrid size={12} />
-            Grid Mode — Resize any panel to reflow
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Grid Overlay inside Provider */}
-      <GridOverlay />
     </div>
   )
 }

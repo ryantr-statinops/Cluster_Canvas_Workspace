@@ -28,8 +28,6 @@ function App() {
     addNode,
     removeNode,
     duplicateNode,
-    setViewMode,
-    viewMode,
     groupSelected,
     ungroupSelected,
     propertiesPanelOpen,
@@ -65,12 +63,6 @@ function App() {
       const hasGroupSelected = nodes.some(n => n.selected && n.type === 'group')
       if (hasGroupSelected) ungroupSelected()
       else groupSelected()
-    } else if (ctrl && !shift && e.key.toLowerCase() === 'f') {
-      e.preventDefault()
-      setViewMode('flex')
-    } else if (ctrl && !shift && e.key.toLowerCase() === 'g') {
-      e.preventDefault()
-      setViewMode('grid')
     } else if (ctrl && e.key === '0') {
       e.preventDefault()
       // Fit view is handled inside CanvasContainer
@@ -96,7 +88,7 @@ function App() {
     } else if (e.key === 'Escape') {
       if (activeModal) closeModal()
     }
-  }, [selectedNodeId, activeModal, viewMode, addNode, duplicateNode, removeNode, setViewMode, closeModal, groupSelected, ungroupSelected, nodes])
+  }, [selectedNodeId, activeModal, addNode, duplicateNode, removeNode, closeModal, groupSelected, ungroupSelected, nodes])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)

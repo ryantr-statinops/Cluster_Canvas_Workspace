@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
-  LayoutDashboard, Search, Plus, LayoutGrid, Workflow,
+  LayoutDashboard, Search, Plus,
   Layers, Palette, Keyboard, Settings, ChevronDown,
   Globe, StickyNote, CheckSquare, Clock, Calendar,
   Image, Video, Gauge, Timer, Pencil, Square, FileText, BookOpen, Filter as FilterIcon, Compass, GitBranch,
@@ -76,7 +76,7 @@ const SearchResultRow = ({ node, onClick, compact }) => {
 
 const Navbar = () => {
   const { 
-    viewMode, setViewMode, openModal, addNode, nodes, edges,
+    openModal, addNode, nodes, edges,
     workspaces, activeWorkspaceId, createWorkspace, switchWorkspace,
     selectNode, undo, redo, undoStack, redoStack,
     applyLayout, applyLayoutToSelected, batchUpdateNodes, batchRemoveNodes,
@@ -592,26 +592,7 @@ const Navbar = () => {
         {/* Divider */}
         <div style={{ width: 1, height: 24, background: 'var(--bg-border)' }} />
 
-        {/* Flex / Grid toggle */}
-        <button
-          className={`btn-ghost ${viewMode === 'flex' ? 'active' : ''}`}
-          onClick={() => setViewMode('flex')}
-          title="Flex Mode - free canvas"
-          id="flex-mode-btn"
-        >
-          <Workflow size={14} />
-          <span style={{ fontSize: 12 }}>Flex</span>
-        </button>
 
-        <button
-          className={`btn-ghost ${viewMode === 'grid' ? 'active' : ''}`}
-          onClick={() => setViewMode('grid')}
-          title="Grid Mode - tiled layout"
-          id="grid-mode-btn"
-        >
-          <LayoutGrid size={14} />
-          <span style={{ fontSize: 12 }}>Grid</span>
-        </button>
 
         {/* Auto-Layout */}
         <div style={{ position: 'relative' }}>

@@ -23,7 +23,6 @@ export function saveState(state) {
       edges:            state.edges,
       workspaces:       state.workspaces,
       activeWorkspaceId: state.activeWorkspaceId,
-      viewMode:         state.viewMode,
       version:          2,
       savedAt:          Date.now(),
     }
@@ -80,7 +79,6 @@ export function saveNamedSnapshot(state, label) {
         edges:      state.edges,
         workspaces: state.workspaces,
         activeWorkspaceId: state.activeWorkspaceId,
-        viewMode:   state.viewMode,
       },
     }
 
@@ -146,7 +144,6 @@ export function saveRecovery(state) {
         edges:      state.edges,
         workspaces: state.workspaces,
         activeWorkspaceId: state.activeWorkspaceId,
-        viewMode:   state.viewMode,
       },
     }
     localStorage.setItem(RECOVERY_KEY, JSON.stringify(recovery))
@@ -215,7 +212,7 @@ export function initPersistence(store, options = {}) {
         edges: saved.edges || [],
         workspaces: saved.workspaces || store.getState().workspaces,
         activeWorkspaceId: saved.activeWorkspaceId || 'default',
-        viewMode: saved.viewMode || 'flex',
+
       })
       console.log(`Persistence: restored ${validNodes.length} nodes from localStorage`)
     }
